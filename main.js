@@ -83,6 +83,7 @@ function loadSettings() {
       adblock: raw.adblock !== false,
       adblockEngine: raw.adblockEngine === 'cream' ? 'cream' : 'ublock',
       uboDefaultApplied: !!raw.uboDefaultApplied,
+      defaultAskedAt: Number(raw.defaultAskedAt) || 0,
       dnt: raw.dnt !== false,
       adblockAllow: Array.isArray(raw.adblockAllow) ? raw.adblockAllow : [],
       clearExit: (raw.clearExit && typeof raw.clearExit === 'object')
@@ -491,6 +492,29 @@ ipcMain.on('autofill:offer-save', (e, entry) => {
   const existing = loadVault().find((x) => pwHost(x.url) === host && (x.username || '').toLowerCase() === username.toLowerCase());
   if (existing && existing.password === entry.password) return; // nothing changed
   toChrome('autofill:save-prompt', { host, url, username, password: String(entry.password), existingId: existing ? existing.id : null });
+});
+
+// ----- Default browser -----
+function isDefaultBrowser() {
+  try { return app.isDefaultProtocolClient('http'); } catch (_) { return false; }
+}
+ipcMain.handle('default:status', (e) => {
+  if (!isShell(e)) return { isDefault: true, askedAt: Date.now() };
+  return { isDefault: isDefaultBrowser(), askedAt: settings.defaultAskedAt || 0 };
+});
+ipcMain.handle('default:make', (e) => {
+  if (!isShell(e)) return false;
+  // Register Solace as an http/https handler (HKCU), then open Windows' default-apps
+  // page so the user can confirm — Windows won't let an app self-assign the default browser.
+  try { app.setAsDefaultProtocolClient('http'); } catch (_) {}
+  try { app.setAsDefaultProtocolClient('https'); } catch (_) {}
+  try { shell.openExternal('ms-settings:defaultapps'); } catch (_) {}
+  settings.defaultAskedAt = Date.now(); saveSettings();
+  return true;
+});
+ipcMain.handle('default:snooze', (e) => {
+  if (isShell(e)) { settings.defaultAskedAt = Date.now(); saveSettings(); }
+  return true;
 });
 
 // ----- Extensions (unpacked) -----

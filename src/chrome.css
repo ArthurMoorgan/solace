@@ -1031,6 +1031,8 @@ html.lite .settings-overlay, html.lite .history-panel, html.lite .downloads-pane
 }
 /* Lightweight = plain, unbranded, Chrome-like: drop the Solace logo from the top bar. */
 html.lite .brand { display: none; }
+/* Lightweight mode is a plain, minimal browser — no sidebar rail. */
+html.lite .sidebar, html.lite .sidebar-toggle { display: none; }
 
 /* ===================== Incognito — hacker theme ===================== */
 /* :root.incognito beats the per-theme blocks (same specificity, declared later). */
@@ -1083,7 +1085,7 @@ html.incognito .omnibox input { font-family: "JetBrains Mono", Consolas, ui-mono
 .onb-h { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 29px; line-height: 1.15; color: var(--text-1); margin-bottom: 10px; }
 .onb-p { font-size: 14px; line-height: 1.55; color: var(--text-2); max-width: 430px; }
 .onb-hero .onb-p { margin: 0 auto; }
-.onb-modes { display: flex; gap: 10px; margin: 18px 0; }
+.onb-modes { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
 .onb-mode { flex: 1; padding: 12px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface-2); color: var(--text-1); font: inherit; font-weight: 500; cursor: pointer; transition: border-color 0.16s, background 0.16s, transform 0.1s; }
 .onb-mode:hover { background: var(--hover); } .onb-mode:active { transform: scale(0.97); }
 .onb-mode.sel { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-deep); }

@@ -1298,6 +1298,39 @@ function showPwSavePrompt(data) {
   setTimeout(() => { if (pwPromptEl === el) close(); }, 20000);
 }
 
+// "Make Solace your default browser?" nudge — on first run and periodically if not default.
+async function maybeShowDefaultPrompt() {
+  if (typeof INCOGNITO !== 'undefined' && INCOGNITO) return;
+  let st = null;
+  try { st = await window.browserAPI.defaultStatus(); } catch (_) { return; }
+  if (!st || st.isDefault) return;
+  const DAY = 86400000;
+  if (st.askedAt && (Date.now() - st.askedAt) < 4 * DAY) return; // asked recently — don't nag
+  showDefaultPrompt();
+}
+function showDefaultPrompt() {
+  const el = document.createElement('div'); el.className = 'pw-prompt';
+  el.innerHTML =
+    '<div class="pw-prompt-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg></div>' +
+    '<div class="pw-prompt-body">' +
+    '<div class="pw-prompt-title">Make Solace your default browser?</div>' +
+    '<div class="pw-prompt-sub">Open links from other apps in Solace.</div>' +
+    '<div class="pw-prompt-row"><button class="btn ghost" data-act="no">Not now</button><button class="btn" data-act="yes">Make default</button></div>' +
+    '</div><button class="pw-prompt-x" aria-label="Dismiss">&times;</button>';
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  const close = () => { el.classList.remove('show'); setTimeout(() => el.remove(), 260); };
+  const snooze = () => { try { window.browserAPI.defaultSnooze(); } catch (_) {} close(); };
+  el.querySelector('.pw-prompt-x').addEventListener('click', snooze);
+  el.querySelector('[data-act="no"]').addEventListener('click', snooze);
+  el.querySelector('[data-act="yes"]').addEventListener('click', () => {
+    try { window.browserAPI.defaultMake(); } catch (_) {}
+    toast('Pick Solace in Windows settings to finish');
+    close();
+  });
+  setTimeout(() => { if (el.isConnected) snooze(); }, 20000);
+}
+
 async function buildPrivacy() {
   const el = $('secPrivacy');
   let p = { adblock: true, dnt: true, blocked: 0 };
@@ -1730,10 +1763,19 @@ function toggleTool(tool) {
 }
 // Shared floating context menu (toolbar customise + web-page right-click)
 let ctxMenuEl = null;
-function closeCtxMenu() { if (ctxMenuEl) { ctxMenuEl.remove(); ctxMenuEl = null; document.removeEventListener('click', closeCtxMenu); } }
+function closeCtxMenu() {
+  if (!ctxMenuEl) return;
+  ctxMenuEl.remove(); ctxMenuEl = null;
+  document.removeEventListener('mousedown', closeCtxMenu);
+  window.removeEventListener('blur', closeCtxMenu);
+  window.removeEventListener('resize', closeCtxMenu);
+  document.removeEventListener('scroll', closeCtxMenu, true);
+}
 function showCtxMenu(x, y, items) {
   closeCtxMenu();
   const m = document.createElement('div'); m.className = 'ctx-menu'; ctxMenuEl = m;
+  // Clicks inside the menu box must NOT dismiss it (only item actions act).
+  m.addEventListener('mousedown', (e) => e.stopPropagation());
   items.forEach((it) => {
     if (!it) return;
     if (it.sep) { const s = document.createElement('div'); s.className = 'ctx-sep'; m.appendChild(s); return; }
@@ -1749,7 +1791,12 @@ function showCtxMenu(x, y, items) {
   const w = m.offsetWidth || 220, h = m.offsetHeight || 220;
   m.style.left = Math.max(6, Math.min(x, window.innerWidth - w - 8)) + 'px';
   m.style.top = Math.max(6, Math.min(y, window.innerHeight - h - 8)) + 'px';
-  setTimeout(() => document.addEventListener('click', closeCtxMenu), 0);
+  setTimeout(() => {
+    document.addEventListener('mousedown', closeCtxMenu);
+    window.addEventListener('blur', closeCtxMenu);        // clicking into the web page (webview) blurs the chrome
+    window.addEventListener('resize', closeCtxMenu);
+    document.addEventListener('scroll', closeCtxMenu, true);
+  }, 0);
 }
 function openToolMenu(x, y) {
   const hidden = new Set(loadHiddenTools());
@@ -1888,9 +1935,9 @@ function initOnboarding(immediate) {
     el.innerHTML = '<h2 class="onb-h">Make it yours</h2><p class="onb-p">Pick a mode — tap More for accent colours.</p><div class="onb-modes" id="onbModes"></div><div class="onb-swatches" id="onbSwatches" hidden></div>';
     const mEl = el.querySelector('#onbModes');
     const sw = el.querySelector('#onbSwatches');
-    [['light', 'Light'], ['dark', 'Dark'], ['noir', 'Noir']].forEach(([id, label]) => {
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'onb-mode' + (theme === id ? ' sel' : ''); b.textContent = label;
-      b.addEventListener('click', () => { setThemeMode(id); mEl.querySelectorAll('.onb-mode').forEach((x) => x.classList.remove('sel')); b.classList.add('sel'); });
+    THEMES.forEach((t) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'onb-mode' + (theme === t.id ? ' sel' : ''); b.textContent = t.name;
+      b.addEventListener('click', () => { setThemeMode(t.id); mEl.querySelectorAll('.onb-mode').forEach((x) => x.classList.remove('sel')); b.classList.add('sel'); });
       mEl.appendChild(b);
     });
     function paintSw() {
@@ -1993,7 +2040,7 @@ function initOnboarding(immediate) {
     nextBtn.textContent = step === STEPS.length - 1 ? 'Start browsing' : 'Next';
     skipBtn.style.visibility = step === STEPS.length - 1 ? 'hidden' : 'visible';
   }
-  function finish() { try { localStorage.setItem('cream.onboarded', '1'); } catch (_) {} root.classList.remove('show'); document.body.classList.remove('onb-open'); setTimeout(() => { root.innerHTML = ''; }, 450); }
+  function finish() { try { localStorage.setItem('cream.onboarded', '1'); } catch (_) {} root.classList.remove('show'); document.body.classList.remove('onb-open'); setTimeout(() => { root.innerHTML = ''; }, 450); setTimeout(maybeShowDefaultPrompt, 900); }
   backBtn.addEventListener('click', () => { if (step > 0) { step--; render(); } });
   nextBtn.addEventListener('click', () => { if (step < STEPS.length - 1) { step++; render(); } else finish(); });
   skipBtn.addEventListener('click', finish);
@@ -2133,6 +2180,9 @@ function init() {
   createTab();
   setTimeout(focusOmnibox, 120);
   initOnboarding();
+  // Default-browser nudge — only once first-run onboarding is already done.
+  let onbDone = false; try { onbDone = localStorage.getItem('cream.onboarded') === '1'; } catch (_) {}
+  if (onbDone) setTimeout(maybeShowDefaultPrompt, 1600);
 }
 
 init();

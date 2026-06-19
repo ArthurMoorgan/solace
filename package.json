@@ -1,12 +1,14 @@
 {
   "name": "cream-browser",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Solace — a polished, light & minimal liquid-glass web browser built on Electron.",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "make-icon": "electron scripts/make-icon.js",
+    "bump": "node scripts/bump-version.js",
     "pack": "electron-builder --dir",
+    "predist": "node scripts/bump-version.js",
     "dist": "electron-builder --win"
   },
   "author": "decodingit",
@@ -25,7 +27,7 @@
     "directories": {
       "output": "dist",
       "buildResources": "build"
-      },
+    },
     "files": [
       "main.js",
       "preload.js",
@@ -57,7 +59,6 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Solace"
-     
     },
     "portable": {
       "artifactName": "Solace-${version}-portable.exe"

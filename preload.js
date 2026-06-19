@@ -66,6 +66,11 @@ contextBridge.exposeInMainWorld('browserAPI', {
   pwImportCsv: () => ipcRenderer.invoke('pw:import-csv'),
   onAutofillSavePrompt: (cb) => ipcRenderer.on('autofill:save-prompt', (_e, data) => cb(data)),
 
+  // Default browser
+  defaultStatus: () => ipcRenderer.invoke('default:status'),
+  defaultMake: () => ipcRenderer.invoke('default:make'),
+  defaultSnooze: () => ipcRenderer.invoke('default:snooze'),
+
   // Background music (file picker; playback runs in the renderer)
   musicChoose: () => ipcRenderer.invoke('music:choose'),
 
