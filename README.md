@@ -6,20 +6,6 @@ Solace is a polished, liquid-glass desktop web browser built on **Electron** wit
 
 ---
 
-## Highlights
-
-- **Ad & tracker blocking, built in** — uBlock Origin ships with Solace and is on by default. No setup.
-- **Encrypted password vault + autofill** — logins are encrypted by your OS keychain (Windows DPAPI), filled in automatically, and never synced anywhere. Import from any browser via CSV.
-- **A private AI assistant** — ask Solace AI from the new-tab page. It uses *your* Anthropic API key, stored only on your device; web pages can never reach it.
-- **Seven themes + accent picker** — Light, Sepia, Arctic, Dark, Midnight, Slate, Noir, plus a Photoshop-style HSV accent wheel and a frost-intensity slider.
-- **Genuine incognito** — a real ephemeral session (no history, no disk traces) with its own look.
-- **Liquid-glass design** — frosted surfaces, fluid animations, and a calm new-tab page with a live clock and quick links.
-- **Private by default** — Do-Not-Track / GPC, optional clear-on-exit, and a hardened main process.
-
-Plus: smart omnibox, bookmarks, history, a full **downloads manager** with progress toasts, per-tab **zoom**, a region **snip** tool, unpacked **extensions**, a removable sidebar, a lightweight mode, and bookmark import from other browsers.
-
----
-
 ## Run it from source
 
 > Requires [Node.js](https://nodejs.org) (LTS) on **Windows**.
