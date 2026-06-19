@@ -5,6 +5,9 @@ node_modules/
 dist/
 build-helpers/
 
+# Bundled uBlock Origin (GPL) — fetched on demand, not vendored. See scripts/fetch-ublock.js
+extensions/
+
 # Logs & OS cruft
 *.log
 .DS_Store

@@ -7,8 +7,10 @@
     "start": "electron .",
     "make-icon": "electron scripts/make-icon.js",
     "bump": "node scripts/bump-version.js",
+    "fetch-ublock": "node scripts/fetch-ublock.js",
+    "postinstall": "node scripts/fetch-ublock.js",
     "pack": "electron-builder --dir",
-    "predist": "node scripts/bump-version.js",
+    "predist": "node scripts/bump-version.js && node scripts/fetch-ublock.js",
     "dist": "electron-builder --win"
   },
   "author": "decodingit",
