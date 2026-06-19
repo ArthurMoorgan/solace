@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: http:; connect-src 'self' https://geocoding-api.open-meteo.com https://api.open-meteo.com;" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Tab</title>
+  <script>
+    // Theme + accent preset: read from ?theme=&preset=, applied before paint.
+    // The chrome can live-update us via window.__creamSetTheme / __creamSetPreset.
+    (function () {
+      var PRESETS = {
+        terracotta: ['#c2703d', '#e2914f'], sage: ['#7c8b5b', '#9caf74'], ocean: ['#2f7e9e', '#56b0cf'],
+        plum: ['#8a5a8f', '#b585ba'], rose: ['#c25b72', '#e58198'], amber: ['#bf8f2e', '#e3b34f'],
+        forest: ['#3f7d52', '#5fa877'], indigo: ['#5b63c2', '#868ee6'], crimson: ['#b8493f', '#e0695c'],
+        teal: ['#2f9e8f', '#52c6b6'], cocoa: ['#8a5a3c', '#c2895a'], graphite: ['#6b6257', '#b8ab95'],
+      };
+      var KNOWN = ['light', 'sepia', 'arctic', 'dark', 'midnight', 'slate', 'noir'];
+      function isDark(t) { return t === 'dark' || t === 'noir' || t === 'midnight' || t === 'slate'; }
+      var curTheme = 'light', curPreset = 'terracotta', curAccent = '';
+      try {
+        var p = new URLSearchParams(location.search);
+        var th = p.get('theme');
+        curTheme = KNOWN.indexOf(th) >= 0 ? th : 'light';
+        curPreset = p.get('preset') || 'terracotta';
+        var ac = p.get('accent') || '';
+        if (/^#?[0-9a-f]{6}$/i.test(ac)) curAccent = ac[0] === '#' ? ac : '#' + ac;
+        var d = document.documentElement;
+        if (p.get('lite') === '1') d.classList.add('lite', 'no-anim');
+        if (p.get('anim') === '0') d.classList.add('no-anim');
+        if (p.get('incognito') === '1') d.classList.add('incognito');
+      } catch (e) {}
+      function hx(h) { h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+      function darken(h, m) { return '#' + hx(h).map(function (x) { return Math.max(0, Math.round(x * (1 - m))).toString(16).padStart(2, '0'); }).join(''); }
+      function applyAccent() {
+        var pr = PRESETS[curPreset] || PRESETS.terracotta;
+        var accent = curAccent || (isDark(curTheme) ? pr[1] : pr[0]);
+        var st = document.documentElement.style;
+        st.setProperty('--accent', accent);
+        st.setProperty('--accent-deep', darken(accent, isDark(curTheme) ? 0.12 : 0.16));
+      }
+      document.documentElement.dataset.theme = curTheme;
+      applyAccent();
+      if (document.documentElement.classList.contains('incognito')) { var si = document.documentElement.style; si.setProperty('--accent', '#2effa0'); si.setProperty('--accent-deep', '#17c97c'); }
+      window.__creamSetTheme = function (t) { curTheme = KNOWN.indexOf(t) >= 0 ? t : 'light'; document.documentElement.dataset.theme = curTheme; applyAccent(); };
+      window.__creamSetPreset = function (id) { curAccent = ''; curPreset = id || 'terracotta'; applyAccent(); };
+      window.__creamSetAccent = function (hexv) { if (/^#?[0-9a-f]{6}$/i.test(hexv || '')) { curAccent = hexv[0] === '#' ? hexv : '#' + hexv; applyAccent(); } };
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --text-1: #3a342a; --text-2: #7c7361; --text-3: #a89d85;
+      --accent: #c2703d; --accent-deep: #a85a2c;
+      --surface: rgba(255, 253, 247, 0.66); --surface-2: rgba(255, 253, 247, 0.42);
+      --border: rgba(150, 125, 85, 0.16); --border-light: rgba(255, 255, 255, 0.7);
+      --bg-a: #f8f2e4; --bg-b: #efe4cf; --bg-top: #fdf8ee;
+      --blob-1: #f3c89a; --blob-2: #e9a877; --blob-3: #dcb78c; --blob-4: #ecd0a6;
+      --blob-op: 0.5;
+      --card: rgba(255, 253, 247, 0.74); --shadow: rgba(100, 78, 48, 0.18);
+      --user-bubble: rgba(194, 112, 61, 0.13);
+      --code-bg: rgba(120, 95, 55, 0.10);
+      --bg-scrim: rgba(248, 242, 228, 0.28);
+    }
+    :root[data-theme="dark"] {
+      --text-1: #f3ead9; --text-2: #bcae97; --text-3: #8c7f69;
+      --accent: #e2914f; --accent-deep: #c2703d;
+      --surface: rgba(60, 52, 42, 0.6); --surface-2: rgba(60, 52, 42, 0.4);
+      --border: rgba(255, 236, 205, 0.12); --border-light: rgba(255, 240, 214, 0.16);
+      --bg-a: #2a2520; --bg-b: #1f1b16; --bg-top: #37302a;
+      --blob-1: #5b3f27; --blob-2: #6d4a2b; --blob-3: #49391f; --blob-4: #3f3324;
+      --blob-op: 0.55;
+      --card: rgba(60, 52, 42, 0.72); --shadow: rgba(0, 0, 0, 0.5);
+      --user-bubble: rgba(226, 145, 79, 0.18);
+      --code-bg: rgba(255, 240, 214, 0.08);
+      --bg-scrim: rgba(20, 17, 13, 0.46);
+    }
+    :root[data-theme="noir"] {
+      --text-1: #f3f3f3; --text-2: #a6a6a6; --text-3: #6b6b6b;
+      --accent: #e2914f; --accent-deep: #c2703d;
+      --surface: rgba(26, 26, 26, 0.62); --surface-2: rgba(26, 26, 26, 0.42);
+      --border: rgba(255, 255, 255, 0.10); --border-light: rgba(255, 255, 255, 0.14);
+      --bg-a: #000000; --bg-b: #000000; --bg-top: #0a0a0a;
+      --blob-1: #1a1a1a; --blob-2: #161616; --blob-3: #141414; --blob-4: #121212;
+      --blob-op: 0.4;
+      --card: rgba(24, 24, 24, 0.72); --shadow: rgba(0, 0, 0, 0.8);
+      --user-bubble: rgba(226, 145, 79, 0.18);
+      --code-bg: rgba(255, 255, 255, 0.06);
+      --bg-scrim: rgba(0, 0, 0, 0.52);
+    }
+    :root[data-theme="noir"] body { background: #000; }
+    :root[data-theme="noir"] .blob { display: none; }
+    :root[data-theme="sepia"] {
+      --text-1: #4a3f2a; --text-2: #837049; --text-3: #a8966b;
+      --accent: #b5722f; --accent-deep: #9a5d23;
+      --surface: rgba(250, 242, 224, 0.7); --surface-2: rgba(250, 242, 224, 0.46);
+      --border: rgba(140, 110, 65, 0.20); --border-light: rgba(255, 250, 235, 0.7);
+      --bg-a: #efe2c6; --bg-b: #e3d2ac; --bg-top: #f6ecd2;
+      --blob-1: #e7c89a; --blob-2: #d8b277; --blob-3: #ddc28c; --blob-4: #ecd9a6;
+      --blob-op: 0.5;
+      --card: rgba(250, 242, 224, 0.78); --shadow: rgba(90, 66, 34, 0.2);
+      --user-bubble: rgba(181, 114, 47, 0.14); --code-bg: rgba(110, 84, 44, 0.10);
+      --bg-scrim: rgba(244, 234, 208, 0.3);
+    }
+    :root[data-theme="arctic"] {
+      --text-1: #25303d; --text-2: #5e6e7e; --text-3: #93a3b3;
+      --accent: #3b82c4; --accent-deep: #2f6aa3;
+      --surface: rgba(255, 255, 255, 0.72); --surface-2: rgba(255, 255, 255, 0.48);
+      --border: rgba(70, 100, 140, 0.16); --border-light: rgba(255, 255, 255, 0.8);
+      --bg-a: #eef3f8; --bg-b: #dde7f0; --bg-top: #f4f9ff;
+      --blob-1: #bcd6ef; --blob-2: #a9c8e8; --blob-3: #cfe0f0; --blob-4: #dceaf6;
+      --blob-op: 0.55;
+      --card: rgba(255, 255, 255, 0.8); --shadow: rgba(30, 55, 90, 0.18);
+      --user-bubble: rgba(59, 130, 196, 0.13); --code-bg: rgba(40, 70, 110, 0.08);
+      --bg-scrim: rgba(238, 243, 248, 0.32);
+    }
+    :root[data-theme="midnight"] {
+      --text-1: #e6ecfb; --text-2: #a9b4d4; --text-3: #7682a6;
+      --accent: #6f8fe0; --accent-deep: #5673c2;
+      --surface: rgba(40, 50, 80, 0.6); --surface-2: rgba(40, 50, 80, 0.4);
+      --border: rgba(150, 180, 255, 0.14); --border-light: rgba(170, 195, 255, 0.16);
+      --bg-a: #161d33; --bg-b: #0f1424; --bg-top: #1e2747;
+      --blob-1: #2a3a6b; --blob-2: #344a8c; --blob-3: #233056; --blob-4: #1d2747;
+      --blob-op: 0.5;
+      --card: rgba(40, 50, 80, 0.72); --shadow: rgba(0, 0, 0, 0.5);
+      --user-bubble: rgba(111, 143, 224, 0.18); --code-bg: rgba(180, 200, 255, 0.08);
+      --bg-scrim: rgba(10, 14, 28, 0.5);
+    }
+    :root[data-theme="slate"] {
+      --text-1: #e7ebf1; --text-2: #aab3c0; --text-3: #7c8693;
+      --accent: #7f9cc2; --accent-deep: #647fa3;
+      --surface: rgba(60, 67, 78, 0.6); --surface-2: rgba(60, 67, 78, 0.4);
+      --border: rgba(200, 210, 225, 0.12); --border-light: rgba(210, 220, 235, 0.14);
+      --bg-a: #222730; --bg-b: #191d24; --bg-top: #2b313c;
+      --blob-1: #333b48; --blob-2: #3d4757; --blob-3: #2a313b; --blob-4: #242a33;
+      --blob-op: 0.5;
+      --card: rgba(60, 67, 78, 0.72); --shadow: rgba(0, 0, 0, 0.5);
+      --user-bubble: rgba(127, 156, 194, 0.18); --code-bg: rgba(210, 220, 235, 0.07);
+      --bg-scrim: rgba(15, 18, 22, 0.5);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+      color: var(--text-1);
+      background:
+        radial-gradient(1000px 700px at 15% -10%, var(--bg-top) 0%, transparent 55%),
+        linear-gradient(155deg, var(--bg-a), var(--bg-b));
+      overflow-x: hidden;
+      position: relative;
+      transition: background 0.4s ease, color 0.4s ease;
+    }
+    html.has-custom-bg body { background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed; }
+    html.has-custom-bg .blob { display: none; }
+
+    /* Living aurora background */
+    .blob { position: fixed; border-radius: 50%; filter: blur(72px); opacity: var(--blob-op); z-index: 0; will-change: transform; pointer-events: none; }
+    .blob.b1 { width: 480px; height: 480px; background: var(--blob-1); top: -150px; right: -90px; animation: drift1 26s ease-in-out infinite; }
+    .blob.b2 { width: 400px; height: 400px; background: var(--blob-2); bottom: -150px; left: -90px; opacity: calc(var(--blob-op) * 0.85); animation: drift2 32s ease-in-out infinite; }
+    .blob.b3 { width: 320px; height: 320px; background: var(--blob-3); top: 38%; left: 56%; opacity: calc(var(--blob-op) * 0.7); animation: drift3 24s ease-in-out infinite; }
+    .blob.b4 { width: 360px; height: 360px; background: var(--blob-4); top: 8%; left: 24%; opacity: calc(var(--blob-op) * 0.6); animation: drift4 30s ease-in-out infinite; }
+    @keyframes drift1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-46px, 40px) scale(1.1); } }
+    @keyframes drift2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(54px, -36px) scale(1.12); } }
+    @keyframes drift3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-40px, -30px) scale(0.9); } }
+    @keyframes drift4 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(38px, 44px) scale(1.08); } }
+
+    .wrap {
+      position: relative; z-index: 1; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 28px; padding: 48px 24px 96px;
+    }
+
+    /* Entrance */
+    @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+    .enter { opacity: 0; animation: rise 0.7s cubic-bezier(0.22,1,0.36,1) forwards; }
+    .d1 { animation-delay: 0.05s; } .d2 { animation-delay: 0.16s; } .d3 { animation-delay: 0.28s; } .d4 { animation-delay: 0.4s; }
+
+    .clock { text-align: center; }
+    .time { font-family: "Inter", system-ui, sans-serif; font-weight: 300; font-size: 66px; line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+    .meta { margin-top: 8px; color: var(--text-2); font-size: 14px; font-weight: 500; }
+    .greeting { color: var(--accent); font-weight: 600; }
+
+    form.search {
+      width: min(600px, 92vw); display: flex; align-items: center; gap: 10px;
+      padding: 5px 6px 5px 18px; border-radius: 14px;
+      background: var(--surface); border: 1px solid var(--border-light);
+      box-shadow: 0 6px 22px var(--shadow);
+      backdrop-filter: blur(22px) saturate(1.3); -webkit-backdrop-filter: blur(22px) saturate(1.3);
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    form.search:focus-within { border-color: var(--accent); box-shadow: 0 8px 26px var(--shadow), 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
+    form.search > svg { width: 18px; height: 18px; flex: 0 0 18px; fill: none; stroke: var(--text-3); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .search input { flex: 1; border: none; background: none; outline: none; font: inherit; font-size: 15px; color: var(--text-1); padding: 11px 0; }
+    .search input::placeholder { color: var(--text-3); }
+    .go { flex: 0 0 auto; border: none; cursor: pointer; width: 38px; height: 38px; border-radius: 10px; background: var(--accent); color: #fff; display: grid; place-items: center; box-shadow: none; transition: transform 0.12s, background 0.18s, filter 0.18s; }
+    .go:hover { background: var(--accent-deep); } .go:active { transform: scale(0.92); }
+    .go svg { stroke: #fff; width: 19px; height: 19px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .links { display: grid; grid-template-columns: repeat(4, 96px); gap: 16px; }
+    .link { position: relative; display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 14px 8px; border-radius: 16px; text-decoration: none; color: var(--text-2); background: transparent; border: 1px solid transparent; cursor: pointer; will-change: transform; transition: transform 0.2s cubic-bezier(0.22,1,0.36,1), background 0.2s, color 0.2s, border-color 0.2s; animation: tileIn 0.42s cubic-bezier(0.22,1,0.36,1) both; animation-delay: calc(var(--i, 0) * 0.035s); }
+    @keyframes tileIn { from { opacity: 0; } to { opacity: 1; } }
+    .link:hover { transform: scale(1.05); background: var(--surface-2); color: var(--text-1); border-color: var(--border); }
+    .link .ic { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; overflow: hidden; background: #fff; box-shadow: 0 2px 6px rgba(120,95,55,0.12); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.24s; }
+    .link .ic img { width: 24px; height: 24px; }
+    .link .ic .fb { font-family: "Fraunces", serif; font-weight: 600; font-size: 18px; color: var(--accent); }
+    .link span.lbl { font-size: 12.5px; font-weight: 500; transition: color 0.22s; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Hover micro-interactions */
+    .link:hover .ic { transform: scale(1.05); box-shadow: 0 6px 16px rgba(120, 95, 55, 0.22); }
+    .link:hover span.lbl { color: var(--accent); }
+    .link:active { transform: translateY(-2px) scale(0.97); }
+
+    /* Remove (x) button on each tile */
+    .link .rm { position: absolute; top: 5px; right: 5px; width: 18px; height: 18px; border-radius: 50%; border: none; background: rgba(0,0,0,0.28); color: #fff; font-size: 13px; line-height: 1; display: grid; place-items: center; cursor: pointer; padding: 0; opacity: 0; transform: scale(0.6); transition: opacity 0.16s, transform 0.16s, background 0.16s; }
+    .link:hover .rm { opacity: 1; transform: scale(1); }
+    .link .rm:hover { background: #c14a36; }
+
+    /* "Add shortcut" tile */
+    .link.add { border-style: dashed; background: transparent; color: var(--text-3); }
+    .link.add .ic { background: var(--surface-2); box-shadow: none; }
+    .link.add .plus { font-size: 24px; font-weight: 300; line-height: 1; color: var(--text-3); transition: color 0.22s; }
+    .link.add:hover { color: var(--accent); border-color: var(--accent); }
+    .link.add:hover .plus { color: var(--accent); }
+
+    /* Add-shortcut modal */
+    .dock-modal { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; background: rgba(20,16,10,0.28); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: fadeIn 0.16s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .dm-card { width: 320px; max-width: 86vw; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: 0 24px 60px rgba(0,0,0,0.28); display: flex; flex-direction: column; gap: 13px; animation: tilePop 0.2s cubic-bezier(0.22,1,0.36,1); }
+    @keyframes tilePop { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: none; } }
+    .dm-title { font-family: "Fraunces", serif; font-weight: 600; font-size: 17px; color: var(--text-1); }
+    .dm-input { font: inherit; font-size: 14px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-1); outline: none; transition: border-color 0.16s; }
+    .dm-input:focus { border-color: var(--accent); }
+    .dm-input.bad { border-color: #c14a36; }
+    .dm-row { display: flex; justify-content: flex-end; gap: 9px; }
+    .dm-btn { font: inherit; font-size: 13.5px; font-weight: 500; padding: 8px 16px; border-radius: 9px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; transition: filter 0.15s, transform 0.1s; }
+    .dm-btn:hover { filter: brightness(1.06); }
+    .dm-btn:active { transform: scale(0.97); }
+    .dm-btn.ghost { background: transparent; color: var(--text-2); border-color: var(--border); }
+    .dm-btn.ghost:hover { color: var(--text-1); background: var(--surface-2); }
+
+    /* Widgets (weather + reminders) */
+    .widgets { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; width: min(640px, 92vw); }
+    .widgets:empty { display: none; }
+    .widget {
+      flex: 1 1 240px; min-width: 220px; max-width: 320px; padding: 16px 18px; border-radius: 18px;
+      background: var(--surface); border: 1px solid var(--border-light);
+      box-shadow: 0 12px 34px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.4);
+      backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4);
+      transition: transform 0.28s cubic-bezier(0.22,1,0.36,1), box-shadow 0.28s; will-change: transform;
+    }
+    .widget:hover { transform: translateY(-4px); box-shadow: 0 20px 44px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.5); }
+    .w-title { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-3); margin-bottom: 10px; }
+    .w-hint { font-size: 13px; color: var(--text-2); line-height: 1.5; }
+    .w-top { display: flex; align-items: center; gap: 12px; }
+    .w-ico { font-size: 34px; line-height: 1; }
+    .w-temp { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 38px; color: var(--text-1); }
+    .w-cond { margin-top: 6px; font-size: 14px; color: var(--text-1); font-weight: 500; }
+    .w-loc { font-size: 12.5px; color: var(--text-2); }
+    .rem-list { list-style: none; display: flex; flex-direction: column; gap: 6px; margin: 0 0 10px; padding: 0; max-height: 168px; overflow-y: auto; }
+    .rem-list li { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--text-1); animation: remIn 0.26s cubic-bezier(0.22,1,0.36,1) both; }
+    @keyframes remIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+    .rem-list li span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rem-empty { color: var(--text-3) !important; font-style: italic; }
+    .rem-x { width: 18px; height: 18px; flex: 0 0 18px; border: none; border-radius: 50%; background: transparent; color: var(--text-3); font-size: 16px; line-height: 1; cursor: pointer; display: grid; place-items: center; transition: background 0.15s, color 0.15s; }
+    .rem-x:hover { background: rgba(193,74,54,0.16); color: #c14a36; }
+    .rem-add { display: flex; gap: 8px; }
+    .rem-add input { flex: 1; min-width: 0; font: inherit; font-size: 13px; padding: 8px 11px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-1); outline: none; transition: border-color 0.15s; }
+    .rem-add input:focus { border-color: var(--accent); }
+    .rem-add button { flex: 0 0 auto; width: 34px; border: none; border-radius: 10px; background: var(--accent); color: #fff; font-size: 18px; line-height: 1; cursor: pointer; transition: filter 0.15s, transform 0.1s; }
+    .rem-add button:hover { filter: brightness(1.06); }
+    .rem-add button:active { transform: scale(0.95); }
+
+    form.search:hover { box-shadow: 0 22px 56px var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.5); }
+
+    /* Private (incognito) banner */
+    .private-banner { display: none; }
+    html.incognito .private-banner {
+      display: flex; align-items: center; gap: 13px;
+      max-width: min(560px, 92vw); padding: 13px 18px; border-radius: 16px;
+      background: var(--surface); border: 1px solid var(--border-light);
+      box-shadow: 0 12px 34px var(--shadow);
+      backdrop-filter: blur(22px) saturate(1.4); -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    }
+    .private-banner svg { width: 26px; height: 26px; flex: 0 0 26px; color: var(--accent); }
+    .private-banner .pb-text { font-size: 13px; line-height: 1.5; color: var(--text-2); }
+    .private-banner .pb-text b { color: var(--text-1); font-weight: 600; }
+
+    /* Lightweight-mode wordmark (shown in place of the clock) */
+    .lite-logo { display: none; } /* lightweight mode is unbranded — no wordmark */
+
+    /* Incognito — hacker theme for the new-tab page */
+    :root.incognito {
+      --text-1: #c9ffe8; --text-2: #74cfa1; --text-3: #4d916e;
+      --bg-top: #0c2417; --bg-a: #06120c; --bg-b: #020704;
+      --surface: rgba(10, 26, 18, 0.7); --surface-2: rgba(10, 26, 18, 0.5);
+      --border: rgba(46, 255, 160, 0.2); --border-light: rgba(46, 255, 160, 0.32);
+      --shadow: rgba(0, 30, 16, 0.6); --bg-scrim: rgba(0, 8, 4, 0.5);
+      --blob-1: #0fbf6a; --blob-2: #0a7a44; --blob-3: #11d97a; --blob-4: #0c8f50;
+    }
+    html.incognito body { font-family: "JetBrains Mono", Consolas, ui-monospace, monospace; }
+    html.incognito .time { font-family: "JetBrains Mono", Consolas, ui-monospace, monospace; font-weight: 400; color: var(--accent); letter-spacing: 0; text-shadow: 0 0 22px color-mix(in srgb, var(--accent) 45%, transparent); }
+    html.incognito .meta { color: var(--text-2); }
+    html.incognito .greeting { color: var(--accent); }
+    html.incognito .private-banner { background: rgba(4, 14, 9, 0.82); border-color: var(--accent-deep); }
+    html.incognito .private-banner svg { filter: drop-shadow(0 0 5px var(--accent)); }
+    html.incognito .private-banner .pb-text, html.incognito .private-banner .pb-text b { color: var(--text-1); }
+    html.incognito .search input, html.incognito .link span.lbl { font-family: "JetBrains Mono", Consolas, ui-monospace, monospace; }
+
+    /* Lightweight mode: strip everything non-essential, no glass, no motion */
+    html.lite .clock, html.lite #widgets, html.lite #ai, html.lite .blob, html.lite .footer, html.lite .private-banner { display: none !important; }
+    html.lite body { background: var(--bg-b) !important; }
+    html.lite form.search { box-shadow: 0 6px 18px var(--shadow) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+    html.lite .link { box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
+    /* Animations off */
+    html.no-anim *, html.no-anim *::before, html.no-anim *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+    html.no-anim .blob { animation: none !important; }
+    html.no-anim .enter { opacity: 1 !important; }
+    .ai-launch .spark svg { transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .ai-launch:hover .spark svg { transform: rotate(20deg) scale(1.2); }
+    .ai-launch:active { transform: translateY(-1px) scale(0.985); }
+    .go svg { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .go:hover svg { transform: translateX(3px); }
+
+    /* ===================== Solace AI ===================== */
+    .ai { width: min(680px, 94vw); display: flex; flex-direction: column; align-items: center; }
+
+    .ai-launch {
+      display: inline-flex; align-items: center; gap: 11px;
+      padding: 13px 22px; border-radius: 18px; cursor: pointer;
+      background: var(--surface); border: 1px solid var(--border-light);
+      box-shadow: 0 10px 30px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.5);
+      backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+      color: var(--text-1); font: inherit; font-size: 14.5px; font-weight: 600;
+      transition: transform 0.18s cubic-bezier(0.22,1,0.36,1), box-shadow 0.18s;
+    }
+    .ai-launch:hover { transform: translateY(-3px); box-shadow: 0 18px 40px var(--shadow); }
+    .ai-launch .spark { color: var(--accent); display: grid; place-items: center; }
+    .ai-launch .spark svg { width: 18px; height: 18px; }
+    .ai-launch .sub { color: var(--text-3); font-weight: 500; font-size: 13px; }
+
+    .ai-panel {
+      width: 100%; margin-top: 4px;
+      display: flex; flex-direction: column;
+      max-height: min(560px, 64vh);
+      border-radius: 22px; overflow: hidden;
+      background: var(--card); border: 1px solid var(--border-light);
+      box-shadow: 0 26px 70px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.5);
+      backdrop-filter: blur(30px) saturate(1.4); -webkit-backdrop-filter: blur(30px) saturate(1.4);
+      animation: panelIn 0.34s cubic-bezier(0.22,1,0.36,1);
+    }
+    @keyframes panelIn { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
+    .ai-panel[hidden] { display: none; }
+
+    .ai-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 12px 18px; border-bottom: 1px solid var(--border); }
+    .ai-title { display: flex; align-items: center; gap: 9px; font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 17px; }
+    .ai-title .spark { color: var(--accent); display: grid; place-items: center; } .ai-title .spark svg { width: 17px; height: 17px; }
+    .ai-head-actions { display: flex; align-items: center; gap: 6px; }
+    .ai-chip { border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2); font: inherit; font-size: 11.5px; font-weight: 600; padding: 5px 10px; border-radius: 9px; cursor: pointer; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+    .ai-chip:hover { color: var(--text-1); background: var(--surface); }
+    .ai-icon { width: 30px; height: 30px; display: grid; place-items: center; border: none; background: transparent; color: var(--text-2); border-radius: 9px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+    .ai-icon:hover { background: var(--surface-2); color: var(--text-1); }
+    .ai-icon svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .ai-body { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+    .ai-body::-webkit-scrollbar { width: 8px; } .ai-body::-webkit-scrollbar-thumb { background: rgba(120,95,55,0.2); border-radius: 8px; }
+
+    .msg { max-width: 86%; font-size: 14px; line-height: 1.6; }
+    .msg.user { align-self: flex-end; background: var(--user-bubble); border: 1px solid var(--border); color: var(--text-1); padding: 10px 14px; border-radius: 16px 16px 5px 16px; white-space: pre-wrap; word-wrap: break-word; }
+    .msg.bot { align-self: flex-start; color: var(--text-1); }
+    .msg.bot .bot-inner { white-space: normal; word-wrap: break-word; }
+    .msg.bot pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; overflow-x: auto; margin: 8px 0; }
+    .msg.bot code { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; }
+    .msg.bot :not(pre) > code { background: var(--code-bg); padding: 1px 5px; border-radius: 5px; }
+    .msg.bot pre code { background: none; padding: 0; }
+    .msg.err { align-self: flex-start; color: #c0492f; font-size: 13px; background: rgba(192,73,47,0.1); border: 1px solid rgba(192,73,47,0.2); padding: 9px 13px; border-radius: 12px; }
+    :root[data-theme="dark"] .msg.err { color: #f0a08c; }
+
+    .typing { display: inline-flex; gap: 5px; padding: 6px 2px; }
+    .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); animation: blink 1.2s infinite both; }
+    .typing i:nth-child(2) { animation-delay: 0.2s; } .typing i:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%,80%,100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+
+    .ai-empty { text-align: center; color: var(--text-3); font-size: 13.5px; margin: auto 0; padding: 18px 8px; line-height: 1.7; }
+    .ai-empty .spark { color: var(--accent); display: block; margin: 0 auto 10px; width: 30px; height: 30px; }
+    .ai-empty .suggest { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; }
+    .ai-empty .suggest button { border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2); font: inherit; font-size: 12.5px; padding: 7px 12px; border-radius: 11px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+    .ai-empty .suggest button:hover { background: var(--surface); color: var(--text-1); }
+
+    .ai-input { display: flex; align-items: flex-end; gap: 8px; padding: 12px 12px 12px 16px; border-top: 1px solid var(--border); }
+    .ai-input textarea { flex: 1; border: none; background: none; outline: none; resize: none; font: inherit; font-size: 14px; color: var(--text-1); max-height: 120px; line-height: 1.5; padding: 6px 0; }
+    .ai-input textarea::placeholder { color: var(--text-3); }
+    .ai-send { flex: 0 0 auto; width: 38px; height: 38px; border: none; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; cursor: pointer; transition: transform 0.12s, background 0.18s, opacity 0.18s; }
+    .ai-send:hover { background: var(--accent-deep); } .ai-send:active { transform: scale(0.92); }
+    .ai-send:disabled { opacity: 0.4; cursor: default; }
+    .ai-send svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .ai-send.stop svg { fill: #fff; stroke: none; }
+
+    /* Setup / settings views */
+    .ai-form-view { padding: 8px 6px; display: flex; flex-direction: column; gap: 12px; }
+    .ai-form-view h3 { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 17px; }
+    .ai-form-view p { font-size: 13px; color: var(--text-2); line-height: 1.6; }
+    .ai-field { display: flex; gap: 8px; }
+    .ai-field input, .ai-field select { flex: 1; font: inherit; font-size: 13.5px; padding: 10px 12px; border-radius: 11px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-1); outline: none; }
+    .ai-field input:focus, .ai-field select:focus { border-color: var(--accent-deep); }
+    .ai-btn { border: none; cursor: pointer; font: inherit; font-size: 13.5px; font-weight: 600; padding: 10px 16px; border-radius: 11px; background: var(--accent); color: #fff; transition: background 0.18s; }
+    .ai-btn:hover { background: var(--accent-deep); }
+    .ai-btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--border); }
+    .ai-btn.ghost:hover { background: var(--surface-2); }
+    .ai-link { color: var(--accent); text-decoration: none; font-weight: 600; font-size: 12.5px; }
+    .ai-link:hover { text-decoration: underline; }
+    .ai-note { font-size: 12px; color: var(--text-3); line-height: 1.6; }
+    .ai-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+    .footer { position: fixed; bottom: 18px; left: 0; right: 0; text-align: center; color: var(--text-3); font-size: 12px; z-index: 1; }
+
+    @media (max-height: 720px) { .time { font-size: 56px; } .wrap { gap: 20px; } }
+    @media (prefers-reduced-motion: reduce) {
+      .blob { animation: none !important; }
+      .enter { opacity: 1; animation: none !important; }
+      .ai-panel { animation: none !important; }
+      * { transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+  <div class="blob b4"></div>
+
+  <div class="wrap">
+    <div class="lite-logo enter d1" aria-hidden="true">Solace</div>
+    <div class="private-banner enter d1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18"/><path d="M6 11l1.4-4.3A2 2 0 0 1 9.3 5.3h5.4a2 2 0 0 1 1.9 1.4L18 11"/><circle cx="7.5" cy="15" r="2.5"/><circle cx="16.5" cy="15" r="2.5"/></svg>
+      <div class="pb-text"><b>You're browsing privately.</b> Solace won't save your history, cookies, or site data from this window.</div>
+    </div>
+    <div class="clock enter d1">
+      <div class="time" id="time">--:--</div>
+      <div class="meta"><span class="greeting" id="greeting">Welcome</span> · <span id="date"></span></div>
+    </div>
+
+    <form class="search enter d2" id="searchForm" autocomplete="off">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="q" type="text" placeholder="Search the web or enter an address" aria-label="Search or enter address" />
+      <button class="go" type="submit" aria-label="Go"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </form>
+
+    <div class="links enter d3" id="links"></div>
+
+    <div class="widgets enter d4" id="widgets"></div>
+
+    <section class="ai enter d4" id="ai">
+      <button class="ai-launch" id="aiLaunch">
+        <span class="spark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.5L19.5 9l-5.6 1.5L12 16l-1.9-5.5L4.5 9l5.6-1.5z"/></svg></span>
+        <span>Ask Solace AI</span>
+        <span class="sub">your built-in assistant</span>
+      </button>
+
+      <div class="ai-panel" id="aiPanel" hidden>
+        <header class="ai-head">
+          <div class="ai-title">
+            <span class="spark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.5L19.5 9l-5.6 1.5L12 16l-1.9-5.5L4.5 9l5.6-1.5z"/></svg></span>
+            Solace AI
+          </div>
+          <div class="ai-head-actions">
+            <button class="ai-chip" id="aiModelChip" title="Change model">Opus 4.8</button>
+            <button class="ai-icon" id="aiSettingsBtn" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 2.6 14H2.5a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4 7.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 5.1V5a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 17 4.6l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></button>
+            <button class="ai-icon" id="aiCloseBtn" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+          </div>
+        </header>
+        <div class="ai-body" id="aiBody"></div>
+        <form class="ai-input" id="aiForm">
+          <textarea id="aiText" rows="1" placeholder="Ask anything…" aria-label="Message Solace AI"></textarea>
+          <button type="submit" class="ai-send" id="aiSend" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <div class="footer">Solace — your calm corner of the web</div>
+
+  <script>
+    /* ---------------- Custom background ---------------- */
+    (function () {
+      var de = document.documentElement;
+      if (de.classList.contains('lite') || de.classList.contains('incognito')) return; // lite & incognito use their own plain backgrounds
+      if (!window.creamPrefs || !window.creamPrefs.getBackground) return;
+      window.creamPrefs.getBackground().then(function (url) {
+        if (!url) return;
+        document.documentElement.classList.add('has-custom-bg');
+        document.body.style.backgroundImage =
+          "linear-gradient(var(--bg-scrim), var(--bg-scrim)), url('" + String(url).replace(/'/g, '%27') + "')";
+      }).catch(function () {});
+    })();
+
+    /* ---------------- Clock & greeting ---------------- */
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function tick() {
+      var now = new Date();
+      document.getElementById('time').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+      document.getElementById('date').textContent = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+      var h = now.getHours();
+      document.getElementById('greeting').textContent = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    }
+    tick(); setInterval(tick, 1000 * 20);
+
+    /* ---------------- Smart search ---------------- */
+    function toURL(input) {
+      var q = (input || '').trim();
+      if (!q) return null;
+      if (/^(https?|file|data|about):/i.test(q)) return q;
+      if (/^localhost(:\d+)?(\/.*)?$/i.test(q)) return 'http://' + q;
+      if (!/\s/.test(q) && /^[^\s]+\.[a-z]{2,}([:/?#].*)?$/i.test(q)) return 'https://' + q;
+      var bases = { google: 'https://www.google.com/search?q=', bing: 'https://www.bing.com/search?q=', duckduckgo: 'https://duckduckgo.com/?q=', brave: 'https://search.brave.com/search?q=', startpage: 'https://www.startpage.com/sp/search?query=', ecosia: 'https://www.ecosia.org/search?q=' };
+      var se = new URLSearchParams(location.search).get('se');
+      return (bases[se] || bases.google) + encodeURIComponent(q);
+    }
+    document.getElementById('searchForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var url = toURL(document.getElementById('q').value);
+      if (url) window.location.href = url;
+    });
+
+    /* ---------------- Quick links (editable dock) ---------------- */
+    /* Empty by default — users add their own shortcuts via the "+ Add" tile. */
+    var linksEl = document.getElementById('links');
+    function loadDock() {
+      try { var v = JSON.parse(localStorage.getItem('cream.dock')); if (Array.isArray(v)) return v; } catch (e) {}
+      return [];
+    }
+    function saveDock(list) { try { localStorage.setItem('cream.dock', JSON.stringify(list)); } catch (e) {} }
+    function dockHost(u) { try { return new URL(u).hostname; } catch (e) { return ''; } }
+    function dockName(u) { var h = dockHost(u).replace(/^www\./, ''); return h ? h.charAt(0).toUpperCase() + h.slice(1).replace(/\..*$/, '') : u; }
+    function dockNormUrl(raw) {
+      var s = String(raw || '').trim(); if (!s) return null;
+      if (!/^https?:\/\//i.test(s)) s = 'https://' + s.replace(/^\/+/, '');
+      try { var u = new URL(s); if (u.hostname.indexOf('.') === -1) return null; return u.href; } catch (e) { return null; }
+    }
+    function renderDock() {
+      var list = loadDock();
+      linksEl.innerHTML = '';
+      list.forEach(function (s, i) {
+        var host = dockHost(s.url);
+        var a = document.createElement('a'); a.className = 'link'; a.href = s.url; a.style.setProperty('--i', i);
+        var ic = document.createElement('div'); ic.className = 'ic';
+        var img = document.createElement('img'); img.src = 'https://www.google.com/s2/favicons?sz=64&domain=' + host; img.alt = '';
+        img.addEventListener('error', function () { var fb = document.createElement('span'); fb.className = 'fb'; fb.textContent = (s.name || dockName(s.url)).charAt(0).toUpperCase(); img.replaceWith(fb); }, { once: true });
+        ic.appendChild(img);
+        var lbl = document.createElement('span'); lbl.className = 'lbl'; lbl.textContent = s.name || dockName(s.url);
+        var rm = document.createElement('button'); rm.className = 'rm'; rm.type = 'button'; rm.title = 'Remove'; rm.setAttribute('aria-label', 'Remove shortcut'); rm.innerHTML = '&times;';
+        rm.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); var l = loadDock(); l.splice(i, 1); saveDock(l); renderDock(); });
+        a.append(ic, lbl, rm); linksEl.appendChild(a);
+      });
+      var add = document.createElement('button'); add.className = 'link add'; add.type = 'button'; add.title = 'Add a shortcut'; add.style.setProperty('--i', list.length);
+      add.innerHTML = '<div class="ic"><span class="plus">+</span></div><span class="lbl">Add</span>';
+      add.addEventListener('click', openDockModal);
+      linksEl.appendChild(add);
+    }
+    function openDockModal() {
+      var ov = document.createElement('div'); ov.className = 'dock-modal';
+      ov.innerHTML = '<div class="dm-card"><div class="dm-title">Add a shortcut</div>' +
+        '<input class="dm-input" type="text" placeholder="example.com" autocomplete="off" spellcheck="false" />' +
+        '<div class="dm-row"><button class="dm-btn ghost" data-act="cancel">Cancel</button><button class="dm-btn" data-act="ok">Add</button></div></div>';
+      document.body.appendChild(ov);
+      var inp = ov.querySelector('.dm-input');
+      setTimeout(function () { try { inp.focus(); } catch (e) {} }, 20);
+      function close() { ov.remove(); }
+      function commit() {
+        var url = dockNormUrl(inp.value);
+        if (!url) { inp.classList.add('bad'); inp.focus(); return; }
+        var list = loadDock();
+        if (!list.some(function (s) { return s.url === url; })) { list.push({ url: url, name: dockName(url) }); saveDock(list); renderDock(); }
+        close();
+      }
+      ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
+      ov.querySelector('[data-act="cancel"]').addEventListener('click', close);
+      ov.querySelector('[data-act="ok"]').addEventListener('click', commit);
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') commit(); else if (e.key === 'Escape') close(); });
+    }
+    renderDock();
+
+    /* ---------------- Widgets (weather + reminders) ---------------- */
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var showWeather = params.get('weather') === '1';
+      var showReminders = params.get('reminders') === '1';
+      var wloc = params.get('wloc') || '';
+      var wrap = document.getElementById('widgets');
+      if (!wrap || (!showWeather && !showReminders)) { if (wrap) wrap.style.display = 'none'; return; }
+      function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+      function card(cls) { var d = document.createElement('div'); d.className = 'widget ' + cls; wrap.appendChild(d); return d; }
+      if (showWeather) {
+        var wc = card('weather-w');
+        if (!wloc) { wc.innerHTML = '<div class="w-title">Weather</div><div class="w-hint">Add a location in Settings → Appearance → New-tab widgets.</div>'; }
+        else { wc.innerHTML = '<div class="w-title">Weather</div><div class="w-hint">Loading…</div>'; loadWeather(wc, wloc, esc); }
+      }
+      if (showReminders) { renderReminders(card('rem-w'), esc); }
+    })();
+
+    function weatherInfo(code, isDay) {
+      var sun = isDay ? '☀️' : '🌙';
+      var m = { 0: [sun, 'Clear sky'], 1: [sun, 'Mainly clear'], 2: ['⛅', 'Partly cloudy'], 3: ['☁️', 'Overcast'],
+        45: ['🌫️', 'Fog'], 48: ['🌫️', 'Rime fog'], 51: ['🌦️', 'Light drizzle'], 53: ['🌦️', 'Drizzle'], 55: ['🌧️', 'Dense drizzle'],
+        61: ['🌧️', 'Light rain'], 63: ['🌧️', 'Rain'], 65: ['🌧️', 'Heavy rain'], 66: ['🌧️', 'Freezing rain'], 67: ['🌧️', 'Freezing rain'],
+        71: ['🌨️', 'Light snow'], 73: ['🌨️', 'Snow'], 75: ['❄️', 'Heavy snow'], 77: ['🌨️', 'Snow grains'],
+        80: ['🌦️', 'Showers'], 81: ['🌧️', 'Showers'], 82: ['⛈️', 'Violent showers'], 85: ['🌨️', 'Snow showers'], 86: ['❄️', 'Snow showers'],
+        95: ['⛈️', 'Thunderstorm'], 96: ['⛈️', 'Thunderstorm'], 99: ['⛈️', 'Severe storm'] };
+      return m[code] || [sun, '—'];
+    }
+    function loadWeather(wc, loc, esc) {
+      fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&name=' + encodeURIComponent(loc))
+        .then(function (r) { return r.json(); })
+        .then(function (g) {
+          if (!g.results || !g.results.length) throw new Error('geo');
+          var pl = g.results[0];
+          return fetch('https://api.open-meteo.com/v1/forecast?current=temperature_2m,weather_code,is_day&latitude=' + pl.latitude + '&longitude=' + pl.longitude)
+            .then(function (r) { return r.json(); }).then(function (w) { return { pl: pl, w: w }; });
+        })
+        .then(function (d) {
+          var c = d.w.current || {}; var info = weatherInfo(c.weather_code, c.is_day);
+          var temp = (c.temperature_2m != null) ? Math.round(c.temperature_2m) : '–';
+          var place = d.pl.name + (d.pl.country_code ? ', ' + d.pl.country_code : '');
+          wc.innerHTML = '<div class="w-top"><span class="w-ico">' + info[0] + '</span><span class="w-temp">' + temp + '°</span></div>' +
+            '<div class="w-cond">' + info[1] + '</div><div class="w-loc">' + esc(place) + '</div>';
+        })
+        .catch(function () { wc.innerHTML = '<div class="w-title">Weather</div><div class="w-hint">Couldn’t load weather for “' + esc(loc) + '”.</div>'; });
+    }
+    function renderReminders(rc, esc) {
+      rc.innerHTML = '<div class="w-title">Reminders</div><ul class="rem-list"></ul><form class="rem-add"><input type="text" placeholder="Add a reminder…" aria-label="Add a reminder" maxlength="120"><button type="submit" aria-label="Add">+</button></form>';
+      var list = rc.querySelector('.rem-list'), form = rc.querySelector('.rem-add'), inp = rc.querySelector('input');
+      function load() { try { var v = JSON.parse(localStorage.getItem('cream.reminders') || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } }
+      function save(a) { try { localStorage.setItem('cream.reminders', JSON.stringify(a)); } catch (e) {} }
+      function render() {
+        var a = load(); list.innerHTML = '';
+        if (!a.length) { var li = document.createElement('li'); li.className = 'rem-empty'; li.textContent = 'Nothing yet — add one below.'; list.appendChild(li); return; }
+        a.forEach(function (t, i) {
+          var li = document.createElement('li');
+          var s = document.createElement('span'); s.textContent = t; li.appendChild(s);
+          var x = document.createElement('button'); x.className = 'rem-x'; x.type = 'button'; x.innerHTML = '&times;'; x.title = 'Remove';
+          x.addEventListener('click', function () { var arr = load(); arr.splice(i, 1); save(arr); render(); });
+          li.appendChild(x); list.appendChild(li);
+        });
+      }
+      form.addEventListener('submit', function (e) { e.preventDefault(); var v = inp.value.trim(); if (!v) return; var a = load(); a.push(v); save(a); inp.value = ''; render(); });
+      render();
+    }
+
+    /* Solace AI can be disabled in Settings (passed as ?ai=0) */
+    if (new URLSearchParams(location.search).get('ai') === '0') {
+      var aiSecEl = document.getElementById('ai'); if (aiSecEl) aiSecEl.style.display = 'none';
+    }
+
+    /* ====================================================
+       Solace AI assistant
+       ==================================================== */
+    var AI = window.creamAI || null;
+    var SHORT = { 'claude-opus-4-8': 'Opus 4.8', 'claude-sonnet-4-6': 'Sonnet 4.6', 'claude-haiku-4-5': 'Haiku 4.5' };
+    var cfg = { hasKey: false, model: 'claude-opus-4-8', models: [], available: !!AI, unauthorized: false };
+    var convo = [];
+    var streaming = false, cancelFn = null;
+
+    var elPanel = document.getElementById('aiPanel');
+    var elLaunch = document.getElementById('aiLaunch');
+    var elBody = document.getElementById('aiBody');
+    var elForm = document.getElementById('aiForm');
+    var elText = document.getElementById('aiText');
+    var elSend = document.getElementById('aiSend');
+    var elChip = document.getElementById('aiModelChip');
+    var elSettings = document.getElementById('aiSettingsBtn');
+    var elClose = document.getElementById('aiCloseBtn');
+
+    var SPARK = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.5L19.5 9l-5.6 1.5L12 16l-1.9-5.5L4.5 9l5.6-1.5z"/></svg>';
+    var ICON_SEND = '<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+    var ICON_STOP = '<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>';
+
+    function esc(t) { return t.replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
+    function fmt(text) {
+      var blocks = [];
+      var s = text.replace(/```(\w+)?\n?([\s\S]*?)```/g, function (m, lang, code) {
+        blocks.push('<pre><code>' + esc(code.replace(/\n$/, '')) + '</code></pre>');
+        return ' ' + (blocks.length - 1) + ' ';
+      });
+      s = esc(s);
+      s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+      s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/\n/g, '<br>');
+      s = s.replace(/ (\d+) /g, function (m, i) { return blocks[+i]; });
+      return s;
+    }
+    function scrollBottom() { elBody.scrollTop = elBody.scrollHeight; }
+
+    async function loadConfig() {
+      if (!AI) return;
+      try {
+        var c = await AI.getConfig();
+        if (c && !c.unauthorized) { cfg.hasKey = !!c.hasKey; cfg.model = c.model || cfg.model; cfg.models = c.models || []; cfg.sdk = c.sdk; }
+        else if (c && c.unauthorized) { cfg.unauthorized = true; }
+      } catch (e) {}
+      elChip.textContent = SHORT[cfg.model] || cfg.model;
+    }
+
+    function openPanel() { elPanel.hidden = false; elLaunch.style.display = 'none'; renderView(); setTimeout(function () { elText && elText.focus(); }, 60); }
+    function closePanel() { elPanel.hidden = true; elLaunch.style.display = ''; }
+
+    function renderView() {
+      if (!AI || cfg.unauthorized) return renderUnavailable();
+      if (!cfg.hasKey) return renderSetup();
+      renderChat();
+    }
+
+    function renderUnavailable() {
+      elForm.style.display = 'none';
+      elBody.innerHTML = '<div class="ai-empty"><span class="spark">' + SPARK + '</span>'
+        + 'Solace AI runs inside the Solace browser app.</div>';
+    }
+
+    function renderSetup(msg) {
+      elForm.style.display = 'none';
+      elBody.innerHTML = '';
+      var v = document.createElement('div'); v.className = 'ai-form-view';
+      v.innerHTML =
+        '<h3>Connect Claude</h3>'
+        + '<p>Solace AI uses your Anthropic API key. It is stored locally on this device and used only for your chats — it never appears in any web page.</p>'
+        + (msg ? '<p class="ai-note" style="color:#c0492f">' + esc(msg) + '</p>' : '')
+        + '<div class="ai-field"><input id="aiKey" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false"></div>'
+        + '<div class="ai-row"><a class="ai-link" id="aiGetKey" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get an API key →</a>'
+        + '<button class="ai-btn" id="aiSaveKey">Save key</button></div>';
+      elBody.appendChild(v);
+      var input = v.querySelector('#aiKey');
+      input.focus();
+      v.querySelector('#aiSaveKey').addEventListener('click', saveKey);
+      input.addEventListener('keydown', function (e) { if (e.key === 'Enter') saveKey(); });
+      async function saveKey() {
+        var key = input.value.trim();
+        if (!key) { input.focus(); return; }
+        var r = await AI.setKey(key);
+        if (r && r.ok && r.hasKey) { cfg.hasKey = true; renderChat(); }
+        else renderSetup('Could not save that key.');
+      }
+    }
+
+    function renderSettings() {
+      elForm.style.display = 'none';
+      elBody.innerHTML = '';
+      var v = document.createElement('div'); v.className = 'ai-form-view';
+      var opts = (cfg.models.length ? cfg.models : [{ id: cfg.model, label: cfg.model }])
+        .map(function (m) { return '<option value="' + m.id + '"' + (m.id === cfg.model ? ' selected' : '') + '>' + esc(m.label) + '</option>'; }).join('');
+      v.innerHTML =
+        '<h3>Settings</h3>'
+        + '<p class="ai-note">Model</p>'
+        + '<div class="ai-field"><select id="aiModelSel">' + opts + '</select></div>'
+        + '<div class="ai-row" style="margin-top:6px"><button class="ai-btn ghost" id="aiRemoveKey">Remove API key</button>'
+        + '<button class="ai-btn" id="aiBack">Done</button></div>';
+      elBody.appendChild(v);
+      v.querySelector('#aiModelSel').addEventListener('change', async function (e) {
+        var r = await AI.setModel(e.target.value);
+        if (r && r.model) { cfg.model = r.model; elChip.textContent = SHORT[cfg.model] || cfg.model; }
+      });
+      v.querySelector('#aiRemoveKey').addEventListener('click', async function () {
+        await AI.clearKey(); cfg.hasKey = false; convo = []; renderSetup();
+      });
+      v.querySelector('#aiBack').addEventListener('click', function () { renderChat(); });
+    }
+
+    function renderChat() {
+      elForm.style.display = '';
+      elBody.innerHTML = '';
+      if (!convo.length) {
+        var e = document.createElement('div'); e.className = 'ai-empty';
+        e.innerHTML = '<span class="spark">' + SPARK + '</span>How can I help? Ask me anything — explanations, writing, ideas, quick code.'
+          + '<div class="suggest"></div>';
+        var sug = e.querySelector('.suggest');
+        ['Explain a concept simply', 'Draft a quick email', 'Give me 5 ideas for…'].forEach(function (t) {
+          var b = document.createElement('button'); b.textContent = t;
+          b.addEventListener('click', function () { elText.value = t === 'Give me 5 ideas for…' ? 'Give me 5 ideas for ' : t; elText.focus(); autoGrow(); });
+          sug.appendChild(b);
+        });
+        elBody.appendChild(e);
+      } else {
+        convo.forEach(function (m) { addBubble(m.role, m.content); });
+        scrollBottom();
+      }
+    }
+
+    function addBubble(role, content) {
+      var d = document.createElement('div');
+      if (role === 'user') { d.className = 'msg user'; d.textContent = content; }
+      else { d.className = 'msg bot'; var inner = document.createElement('div'); inner.className = 'bot-inner'; inner.innerHTML = fmt(content); d.appendChild(inner); }
+      elBody.appendChild(d); return d;
+    }
+
+    function setSending(on) {
+      streaming = on;
+      elSend.classList.toggle('stop', on);
+      elSend.innerHTML = on ? ICON_STOP : ICON_SEND;
+      elSend.setAttribute('aria-label', on ? 'Stop' : 'Send');
+    }
+
+    function send() {
+      var text = elText.value.trim();
+      if (streaming) { if (cancelFn) cancelFn(); return; }
+      if (!AI) return;
+      if (cfg.unauthorized) { renderUnavailable(); return; }
+      if (!cfg.hasKey) { renderSetup(); return; }
+      if (!text) return;
+
+      // remove empty-state if present
+      var empty = elBody.querySelector('.ai-empty'); if (empty) empty.remove();
+
+      convo.push({ role: 'user', content: text });
+      addBubble('user', text);
+      elText.value = ''; autoGrow();
+
+      var botWrap = document.createElement('div'); botWrap.className = 'msg bot';
+      var typing = document.createElement('div'); typing.className = 'typing'; typing.innerHTML = '<i></i><i></i><i></i>';
+      botWrap.appendChild(typing); elBody.appendChild(botWrap); scrollBottom();
+
+      var acc = ''; var inner = null;
+      setSending(true);
+
+      cancelFn = AI.chat(convo.slice(),
+        function onText(t) {
+          if (!inner) { botWrap.innerHTML = ''; inner = document.createElement('div'); inner.className = 'bot-inner'; botWrap.appendChild(inner); }
+          acc += t; inner.innerHTML = fmt(acc); scrollBottom();
+        },
+        function onDone() {
+          setSending(false); cancelFn = null;
+          if (!acc) { botWrap.innerHTML = '<div class="bot-inner" style="color:var(--text-3)">No response.</div>'; }
+          else convo.push({ role: 'assistant', content: acc });
+        },
+        function onError(msg) {
+          setSending(false); cancelFn = null;
+          if (msg === 'no-key') { convo.pop(); cfg.hasKey = false; renderSetup(); return; }
+          if (msg === 'auth') { botWrap.remove(); convo.pop(); renderSetup('That API key was rejected. Please check it.'); return; }
+          if (msg === 'sdk-missing') { botWrap.outerHTML = '<div class="msg err">AI library not installed. Run npm install in the project folder.</div>'; return; }
+          if (msg === 'aborted') {
+            if (acc) { convo.push({ role: 'assistant', content: acc }); }
+            else botWrap.remove();
+            return;
+          }
+          botWrap.className = 'msg err'; botWrap.textContent = msg || 'Something went wrong.';
+        }
+      );
+    }
+
+    function autoGrow() { elText.style.height = 'auto'; elText.style.height = Math.min(elText.scrollHeight, 120) + 'px'; }
+
+    elLaunch.addEventListener('click', openPanel);
+    elClose.addEventListener('click', closePanel);
+    elSettings.addEventListener('click', function () { if (cfg.hasKey) renderSettings(); else renderSetup(); });
+    elChip.addEventListener('click', function () { if (cfg.hasKey) renderSettings(); });
+    elForm.addEventListener('submit', function (e) { e.preventDefault(); send(); });
+    elText.addEventListener('input', autoGrow);
+    elText.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+    });
+
+    if (!AI) { elLaunch.querySelector('.sub').textContent = 'available in the app'; }
+    loadConfig().then(function () {
+      try { if (new URLSearchParams(location.search).get('ai') === '1') openPanel(); } catch (e) {}
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice">
+  <rect width="1600" height="1000" fill="#1b2545"/>
+  <circle cx="1280" cy="240" r="120" fill="#eee6cf"/>
+  <circle cx="1232" cy="212" r="120" fill="#1b2545"/>
+  <circle cx="220" cy="170" r="3" fill="#fff" opacity="0.9"/>
+  <circle cx="430" cy="120" r="2.4" fill="#fff" opacity="0.8"/>
+  <circle cx="610" cy="230" r="3.2" fill="#fff" opacity="0.85"/>
+  <circle cx="350" cy="320" r="2" fill="#fff" opacity="0.7"/>
+  <circle cx="780" cy="140" r="2.6" fill="#fff" opacity="0.8"/>
+  <circle cx="940" cy="300" r="2" fill="#fff" opacity="0.65"/>
+  <circle cx="1050" cy="120" r="3" fill="#fff" opacity="0.85"/>
+  <circle cx="150" cy="470" r="2.4" fill="#fff" opacity="0.7"/>
+  <circle cx="520" cy="430" r="2" fill="#fff" opacity="0.6"/>
+  <circle cx="1450" cy="430" r="2.6" fill="#fff" opacity="0.75"/>
+  <path d="M0 780 L 320 560 L 600 780 Z" fill="#141c38"/>
+  <path d="M360 800 L 780 540 L 1200 800 Z" fill="#0e1530"/>
+  <path d="M980 800 L 1320 600 L 1600 800 V1000 H980 Z" fill="#121a33"/>
+  <rect y="792" width="1600" height="208" fill="#0c1228"/>
+</svg>

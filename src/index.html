@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: http:; connect-src 'self'; media-src 'self' blob: file:; child-src 'self';" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solace</title>
+  <script>try{var d=document.documentElement;var t=localStorage.getItem('cream.theme');d.dataset.theme=['light','sepia','arctic','dark','midnight','slate','noir'].indexOf(t)>=0?t:'light';if(localStorage.getItem('cream.lite')==='1')d.classList.add('lite','no-anim');if(localStorage.getItem('cream.anim')==='0')d.classList.add('no-anim');if(new URLSearchParams(location.search).get('incognito')==='1')d.classList.add('incognito');}catch(e){document.documentElement.dataset.theme='light';}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="chrome.css" />
+</head>
+<body>
+  <div id="onboarding" class="onb" aria-hidden="true"></div>
+  <div id="app">
+    <!-- ===== Titlebar + Tab strip ===== -->
+    <header class="titlebar" id="titlebar">
+      <button class="icon-btn no-drag sidebar-toggle" id="sidebarToggle" title="Toggle sidebar" aria-label="Toggle sidebar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="M9 4.5v15"/></svg>
+      </button>
+      <div class="brand" title="Solace">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 3a9 9 0 0 0 0 18" fill="currentColor" opacity="0.55"/>
+        </svg>
+        <span class="brand-name">Solace</span>
+      </div>
+      <span class="incognito-badge no-drag" aria-label="Private window">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18"/><path d="M6 11l1.4-4.3A2 2 0 0 1 9.3 5.3h5.4a2 2 0 0 1 1.9 1.4L18 11"/><circle cx="7.5" cy="15" r="2.5"/><circle cx="16.5" cy="15" r="2.5"/></svg>
+        Private
+      </span>
+
+      <div class="tabstrip" id="tabstrip" role="tablist" aria-label="Open tabs"></div>
+
+      <button class="new-tab-btn icon-btn no-drag" id="newTabBtn" title="New tab  (Ctrl+T)" aria-label="New tab">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+
+      <div class="titlebar-spacer"></div>
+
+      <div class="window-controls no-drag">
+        <button class="win-btn" id="winMin" title="Minimize" aria-label="Minimize">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>
+        </button>
+        <button class="win-btn" id="winMax" title="Maximize" aria-label="Maximize">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="ico-max"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="ico-restore"><rect x="8" y="5" width="11" height="11" rx="2"/><path d="M5 9v8a2 2 0 0 0 2 2h8"/></svg>
+        </button>
+        <button class="win-btn win-close" id="winClose" title="Close" aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="body-row">
+      <!-- ===== Sidebar rail ===== -->
+      <nav class="sidebar" id="sidebar" aria-label="Sidebar">
+        <button class="rail-btn" id="railNewTab" title="New tab  (Ctrl+T)" aria-label="New tab">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button class="rail-btn" id="railBookmarks" title="Toggle bookmarks bar" aria-label="Bookmarks">
+          <svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
+        </button>
+        <button class="rail-btn" id="railHistory" title="History  (Ctrl+H)" aria-label="History">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+        </button>
+        <button class="rail-btn rail-ai" id="railAI" title="Solace AI" aria-label="Solace AI">
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l1.9 5.5L19.5 9l-5.6 1.5L12 16l-1.9-5.5L4.5 9l5.6-1.5z"/></svg>
+        </button>
+        <button class="rail-btn" id="railMusic" title="Background music" aria-label="Background music">
+          <svg viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>
+        </button>
+        <div class="rail-div"></div>
+        <div class="rail-sites" id="railSites"></div>
+        <button class="rail-btn rail-add" id="railAddSite" title="Add a site to the sidebar" aria-label="Add site">
+          <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M12 9v6M9 12h6"/></svg>
+        </button>
+        <div class="rail-spacer"></div>
+        <button class="rail-btn" id="railSettings" title="Settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 2.6 14H2.5a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4 7.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 5.1V5a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 17 4.6l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
+        </button>
+      </nav>
+
+      <div class="content-col">
+      <!-- ===== Toolbar ===== -->
+      <div class="toolbar">
+      <div class="nav-group">
+        <button class="icon-btn" id="backBtn" title="Back  (Alt+←)" aria-label="Back" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <button class="icon-btn" id="forwardBtn" title="Forward  (Alt+→)" aria-label="Forward" disabled>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <button class="icon-btn" id="reloadBtn" title="Reload  (Ctrl+R)" aria-label="Reload">
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="ico-reload"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="ico-stop"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+        <button class="icon-btn" id="homeBtn" title="Home  (new tab page)" aria-label="Home">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"/><path d="M9.5 21v-6h5v6"/></svg>
+        </button>
+      </div>
+
+      <div class="omnibox" id="omnibox">
+        <span class="omni-icon" id="omniIcon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        </span>
+        <input id="address" type="text" spellcheck="false" autocomplete="off"
+               placeholder="Search the web or enter an address" aria-label="Address and search bar" />
+        <button class="star-btn icon-btn" id="starBtn" title="Bookmark this page  (Ctrl+D)" aria-label="Bookmark this page">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 17l-5.2 2.6 1-5.8L3.6 9.7l5.8-.8z"/></svg>
+        </button>
+      </div>
+
+      <div class="action-group" id="actionGroup">
+        <button class="icon-btn tool-btn rail-shield" id="adblockBtn" data-tool="adblock" title="Ad blocker" aria-label="Ad blocker">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+        </button>
+        <button class="icon-btn tool-btn" id="dlBtn" data-tool="downloads" title="Downloads  (Ctrl+J)" aria-label="Downloads">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11M7.5 10l4.5 4 4.5-4"/><path d="M5 20h14"/></svg>
+        </button>
+        <button class="icon-btn tool-btn" id="extBtn" data-tool="extensions" title="Extensions" aria-label="Extensions">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
+        </button>
+        <button class="icon-btn tool-btn" id="zoomBtn" data-tool="zoom" title="Zoom" aria-label="Zoom">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M8.2 11h5.6M11 8.2v5.6"/></svg>
+        </button>
+        <button class="icon-btn tool-btn" id="snipBtn" data-tool="snip" title="Snip — capture a region" aria-label="Snip">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M2 6h14a2 2 0 0 1 2 2v14"/></svg>
+        </button>
+        <button class="icon-btn tool-btn theme-btn" id="themeBtn" data-tool="theme" title="Toggle light / dark" aria-label="Toggle light or dark theme">
+          <svg class="ico-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.6M12 19.4V22M4.2 4.2 6 6M18 18l1.8 1.8M2 12h2.6M19.4 12H22M4.2 19.8 6 18M18 6l1.8-1.8"/></svg>
+          <svg class="ico-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13.6A8 8 0 1 1 10.4 4 6.3 6.3 0 0 0 20 13.6z"/></svg>
+        </button>
+        <button class="icon-btn tool-btn" id="historyBtn" data-tool="history" title="History  (Ctrl+H)" aria-label="History">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+        </button>
+        <button class="icon-btn" id="menuBtn" title="Menu" aria-label="Menu" aria-haspopup="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== Bookmarks bar ===== -->
+    <div class="bookmarks-bar" id="bookmarksBar"></div>
+
+      <!-- ===== Web content ===== -->
+      <div class="views" id="views"></div>
+      </div><!-- /content-col -->
+    </div><!-- /body-row -->
+  </div>
+
+  <!-- ===== Overlays ===== -->
+  <div class="scrim" id="scrim"></div>
+
+  <aside class="panel history-panel" id="historyPanel" aria-label="History" aria-hidden="true">
+    <div class="panel-head">
+      <h2><svg viewBox="0 0 24 24" class="panel-title-ico" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg> History</h2>
+      <div class="panel-head-actions">
+        <button class="text-btn" id="clearHistoryBtn" title="Clear all history">Clear all</button>
+        <button class="icon-btn" id="closeHistoryBtn" aria-label="Close history">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="history-search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="historySearch" placeholder="Search history" autocomplete="off" />
+    </div>
+    <div class="panel-body" id="historyList"></div>
+  </aside>
+
+  <aside class="panel downloads-panel" id="downloadsPanel" aria-label="Downloads" aria-hidden="true">
+    <div class="panel-head">
+      <h2><svg viewBox="0 0 24 24" class="panel-title-ico" aria-hidden="true"><path d="M12 3v11M7.5 10l4.5 4 4.5-4"/><path d="M5 20h14"/></svg> Downloads</h2>
+      <div class="panel-head-actions">
+        <button class="text-btn" id="clearDownloadsBtn" title="Clear finished downloads">Clear</button>
+        <button class="icon-btn" id="closeDownloadsBtn" aria-label="Close downloads">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="panel-body" id="downloadsList"></div>
+  </aside>
+
+  <div class="dl-toasts" id="dlToasts" aria-live="polite"></div>
+
+  <div class="zoom-pop" id="zoomPop" aria-hidden="true">
+    <button class="zoom-step" id="zoomOut" title="Zoom out  (Ctrl -)" aria-label="Zoom out"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+    <button class="zoom-val" id="zoomVal" title="Reset zoom  (Ctrl 0)">100%</button>
+    <button class="zoom-step" id="zoomIn" title="Zoom in  (Ctrl +)" aria-label="Zoom in"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  </div>
+
+  <div class="zoom-pop music-pop" id="musicPop" aria-hidden="true">
+    <div class="music-head">
+      <button class="zoom-step music-play" id="musicPlay" aria-label="Play / pause"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M7 4l13 8-13 8z"/></svg></button>
+      <div class="music-name" id="musicName">No track loaded</div>
+      <button class="zoom-step" id="musicLoop" title="Loop" aria-label="Loop"><svg viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></button>
+    </div>
+    <div class="music-vol">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+      <input type="range" id="musicVol" min="0" max="100" value="70" aria-label="Volume">
+    </div>
+    <button class="btn ghost" id="musicChoose">Choose audio file…</button>
+  </div>
+
+  <audio id="bgAudio" loop preload="none"></audio>
+
+  <div class="zoom-pop adblock-pop" id="adblockPop" aria-hidden="true">
+    <div class="ab-head">
+      <span class="ab-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+      <div class="ab-meta"><div class="ab-title">Ad &amp; tracker blocker</div><div class="ab-site" id="abSite">—</div></div>
+    </div>
+    <div class="ab-stat" id="abStat"></div>
+    <div class="ab-row"><span>Block on this site</span><div class="switch on" id="abSiteSwitch" role="switch" tabindex="0"></div></div>
+    <button class="btn ghost" id="abSettings">Privacy settings…</button>
+  </div>
+
+  <div class="zoom-pop addsite-pop" id="addSitePop" aria-hidden="true">
+    <div class="addsite-title">Add to sidebar</div>
+    <input id="addSiteInput" type="text" placeholder="example.com" autocomplete="off" spellcheck="false" />
+    <button class="btn" id="addSiteBtn">Add shortcut</button>
+  </div>
+
+  <div class="snip-overlay" id="snipOverlay" aria-hidden="true">
+    <div class="snip-hint" id="snipHint">Drag to capture a region · <b>Esc</b> to cancel</div>
+    <div class="snip-box" id="snipBox"></div>
+  </div>
+
+  <div class="menu-dropdown" id="menuDropdown" role="menu" aria-hidden="true"></div>
+
+  <!-- ===== Settings page ===== -->
+  <div class="settings-overlay" id="settingsOverlay" hidden aria-hidden="true">
+    <div class="settings-shell" role="dialog" aria-label="Settings">
+      <aside class="settings-nav">
+        <div class="settings-title"><span class="settings-logo">S</span> Settings</div>
+        <button class="snav active" data-sec="appearance">
+          <svg viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 22a10 10 0 1 1 0-20c5 0 9 3.5 9 8 0 3-2.5 4-4.5 4H14a2 2 0 0 0-1.4 3.4A2 2 0 0 1 12 22z"/></svg>
+          Appearance
+        </button>
+        <button class="snav" data-sec="ai">
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l1.9 5.5L19.5 9l-5.6 1.5L12 16l-1.9-5.5L4.5 9l5.6-1.5z"/></svg>
+          Solace AI
+        </button>
+        <button class="snav" data-sec="browsing">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
+          Browsing
+        </button>
+        <button class="snav" data-sec="privacy">
+          <svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+          Privacy
+        </button>
+        <button class="snav" data-sec="passwords">
+          <svg viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v4M21 12v3"/></svg>
+          Passwords
+        </button>
+        <button class="snav" data-sec="extensions">
+          <svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
+          Extensions
+        </button>
+        <button class="snav" data-sec="about">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+          About
+        </button>
+      </aside>
+      <div class="settings-main">
+        <button class="settings-close" id="settingsClose" aria-label="Close settings">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+        <div class="settings-scroll" id="settingsScroll">
+          <section class="ssec" data-sec="appearance" id="secAppearance"></section>
+          <section class="ssec" data-sec="ai" id="secAI" hidden></section>
+          <section class="ssec" data-sec="browsing" id="secBrowsing" hidden></section>
+          <section class="ssec" data-sec="privacy" id="secPrivacy" hidden></section>
+          <section class="ssec" data-sec="passwords" id="secPasswords" hidden></section>
+          <section class="ssec" data-sec="extensions" id="secExtensions" hidden></section>
+          <section class="ssec" data-sec="about" id="secAbout" hidden></section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="chrome.js"></script>
+</body>
+</html>

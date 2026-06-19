@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ECA063"/>
+      <stop offset="0.52" stop-color="#C2703D"/>
+      <stop offset="1" stop-color="#9F4E1E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.3" cy="0.24" r="0.95">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.30"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <mask id="crescent">
+      <rect width="1024" height="1024" fill="black"/>
+      <circle cx="516" cy="514" r="250" fill="white"/>
+      <circle cx="610" cy="438" r="226" fill="black"/>
+    </mask>
+  </defs>
+
+  <!-- warm squircle (transparent corners) -->
+  <rect x="72" y="72" width="880" height="880" rx="220" fill="url(#bg)"/>
+  <rect x="72" y="72" width="880" height="880" rx="220" fill="url(#glow)"/>
+
+  <!-- crescent moon, carved from a cream disc -->
+  <g mask="url(#crescent)"><rect width="1024" height="1024" fill="#FBF1DE"/></g>
+
+  <!-- small star in the moon's opening -->
+  <path d="M676 372 l16 44 44 16 -44 16 -16 44 -16 -44 -44 -16 44 -16 z" fill="#FBF1DE" opacity="0.95"/>
+</svg>

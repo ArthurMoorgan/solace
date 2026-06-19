@@ -1,0 +1,66 @@
+{
+  "name": "cream-browser",
+  "version": "1.0.0",
+  "description": "Solace — a polished, light & minimal liquid-glass web browser built on Electron.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "make-icon": "electron scripts/make-icon.js",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win"
+  },
+  "author": "decodingit",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^42.4.1",
+    "electron-builder": "^26.15.3"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.104.2"
+  },
+  "build": {
+    "appId": "com.decodingit.solace",
+    "productName": "Solace",
+    "copyright": "Copyright © 2026 decodingit",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+      },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "extensions/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Solace"
+     
+    },
+    "portable": {
+      "artifactName": "Solace-${version}-portable.exe"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build output & tooling caches
+dist/
+build-helpers/
+
+# Logs & OS cruft
+*.log
+.DS_Store
+Thumbs.db
+
+# Local runtime data (never in the project tree, but just in case)
+cream-settings.json
+cream-vault.dat
