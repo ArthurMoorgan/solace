@@ -16,6 +16,20 @@ try { app.setAppUserModelId('com.drift.app'); } catch (_) {}
 // Window/taskbar icon (bundled with the app so it shows in the portable build too).
 const APP_ICON = path.join(__dirname, 'src', 'icon.png');
 
+// ---- Performance switches (must be set before the app is ready) ----
+// A few safe GPU accelerations for everyone; an aggressive low-memory mode when the
+// user has Lightweight mode on (read straight from the settings file at process start).
+try { app.commandLine.appendSwitch('enable-gpu-rasterization'); } catch (_) {}
+try { app.commandLine.appendSwitch('enable-zero-copy'); } catch (_) {}
+try { app.commandLine.appendSwitch('ignore-gpu-blocklist'); } catch (_) {}
+try {
+  const raw0 = JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'cream-settings.json'), 'utf8'));
+  if (raw0 && raw0.lite) {
+    app.commandLine.appendSwitch('enable-low-end-device-mode');   // leaner memory footprint
+    app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
+  }
+} catch (_) {}
+
 // Harden a session: deny privacy-invasive permission requests by default.
 function hardenSession(ses) {
   const DENY = new Set(['notifications', 'geolocation', 'midi', 'midiSysex', 'hid', 'serial', 'usb', 'idle-detection', 'sensors', 'background-sync', 'persistent-storage']);
@@ -90,6 +104,7 @@ function loadSettings() {
       defaultAskedAt: Number(raw.defaultAskedAt) || 0,
       dnt: raw.dnt !== false,
       acrylic: !!raw.acrylic,
+      lite: !!raw.lite,
       adblockAllow: Array.isArray(raw.adblockAllow) ? raw.adblockAllow : [],
       clearExit: (raw.clearExit && typeof raw.clearExit === 'object')
         ? { history: !!raw.clearExit.history, cookies: !!raw.clearExit.cookies, cache: !!raw.clearExit.cache }
@@ -147,7 +162,7 @@ function createWindow() {
       webviewTag: true,           // enable <webview> for tab content
       sandbox: false,
       spellcheck: true,
-      backgroundThrottling: false, // keep background tabs responsive
+      backgroundThrottling: true, // throttle when the window is in the background (saves CPU/memory)
     },
   });
 
@@ -183,6 +198,8 @@ ipcMain.on('window:set-acrylic', (e, on) => {
     else { w.setBackgroundMaterial('none'); w.setBackgroundColor('#F3ECDD'); }
   } catch (_) {}   // non-Windows / unsupported: silently ignore
 });
+// Lightweight mode is mirrored to settings so the perf switches apply at next launch.
+ipcMain.on('mode:set-lite', (_e, on) => { settings.lite = !!on; try { saveSettings(); } catch (_) {} });
 
 // ---- Incognito window (genuine private browsing: ephemeral in-memory session) ----
 const incognitoDlAttached = new Set();
@@ -200,7 +217,7 @@ function createIncognitoWindow() {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true, nodeIntegration: false, webviewTag: true,
-      sandbox: false, spellcheck: true, backgroundThrottling: false,
+      sandbox: false, spellcheck: true, backgroundThrottling: true,
     },
   });
   win.loadFile(path.join(__dirname, 'src', 'index.html'), { query: { incognito: '1' } });

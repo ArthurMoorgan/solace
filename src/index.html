@@ -16,7 +16,7 @@
       <button class="icon-btn no-drag sidebar-toggle" id="sidebarToggle" title="Toggle sidebar" aria-label="Toggle sidebar">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="M9 4.5v15"/></svg>
       </button>
-      <div class="brand" title="Drift">
+      <div class="brand no-drag" id="brandHome" title="Home" role="button" tabindex="0">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="12" cy="12" r="9.3" opacity="0.45"/>
           <path d="M5.5 15.5C9 17.5 12.5 14 16.5 7.5"/>
@@ -65,7 +65,7 @@
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
         </button>
         <button class="rail-btn rail-ai" id="railAI" title="Drift AI" aria-label="Drift AI">
-          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l1.9 5.5L19.5 9l-5.6 1.5L12 16l-1.9-5.5L4.5 9l5.6-1.5z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 5l1.9 5.5L19.5 12l-5.6 1.5L12 19l-1.9-5.5L4.5 12l5.6-1.5z"/></svg>
         </button>
         <button class="rail-btn" id="railMusic" title="Background music" aria-label="Background music">
           <svg viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>
@@ -280,8 +280,12 @@
           <svg viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 22a10 10 0 1 1 0-20c5 0 9 3.5 9 8 0 3-2.5 4-4.5 4H14a2 2 0 0 0-1.4 3.4A2 2 0 0 1 12 22z"/></svg>
           Appearance
         </button>
+        <button class="snav" data-sec="layout">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+          Layout
+        </button>
         <button class="snav" data-sec="ai">
-          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l1.9 5.5L19.5 9l-5.6 1.5L12 16l-1.9-5.5L4.5 9l5.6-1.5z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 5l1.9 5.5L19.5 12l-5.6 1.5L12 19l-1.9-5.5L4.5 12l5.6-1.5z"/></svg>
           Drift AI
         </button>
         <button class="snav" data-sec="browsing">
@@ -311,6 +315,7 @@
         </button>
         <div class="settings-scroll" id="settingsScroll">
           <section class="ssec" data-sec="appearance" id="secAppearance"></section>
+          <section class="ssec" data-sec="layout" id="secLayout" hidden></section>
           <section class="ssec" data-sec="ai" id="secAI" hidden></section>
           <section class="ssec" data-sec="browsing" id="secBrowsing" hidden></section>
           <section class="ssec" data-sec="privacy" id="secPrivacy" hidden></section>

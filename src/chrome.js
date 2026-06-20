@@ -379,19 +379,43 @@ function renderBookmarks() {
   for (const bm of bookmarks) {
     const chip = document.createElement('button');
     chip.className = 'bm-chip';
-    chip.title = bm.title + '\n' + bm.url + '\n(right-click to remove)';
+    chip.title = (bm.title || hostOf(bm.url)) + '\n' + bm.url;
     const label = document.createElement('span');
     label.className = 'bm-label';
-    label.textContent = hostOf(bm.url);
+    label.textContent = bm.title || hostOf(bm.url);
     chip.append(faviconNode(bm.favicon, bm.title || bm.url), label);
     chip.addEventListener('click', () => navigate(bm.url));
-    chip.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      bookmarks = bookmarks.filter((b) => b.url !== bm.url);
-      saveBookmarks(); renderBookmarks(); syncStar();
-    });
+    chip.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showBookmarkMenu(e.clientX, e.clientY, bm); });
     bookmarksBarEl.appendChild(chip);
   }
+}
+function showBookmarkMenu(x, y, bm) {
+  showCtxMenu(x, y, [
+    { head: bm.title || hostOf(bm.url) },
+    { label: 'Open', fn: () => navigate(bm.url) },
+    { label: 'Open in new tab', fn: () => createTab(bm.url, { activate: false }) },
+    { label: 'Rename…', fn: () => startBookmarkRename(bm) },
+    { label: 'Copy address', fn: () => clipText(bm.url) },
+    { sep: true },
+    { label: 'Remove', fn: () => { bookmarks = bookmarks.filter((b) => b.url !== bm.url); saveBookmarks(); renderBookmarks(); syncStar(); } },
+  ]);
+}
+function startBookmarkRename(bm) {
+  renderBookmarks();
+  const idx = bookmarks.indexOf(bm);
+  const chip = bookmarksBarEl.querySelectorAll('.bm-chip')[idx];
+  if (!chip) return;
+  const input = document.createElement('input');
+  input.className = 'bm-rename'; input.value = bm.title || hostOf(bm.url);
+  chip.replaceWith(input); input.focus(); input.select();
+  let done = false;
+  const commit = (save) => {
+    if (done) return; done = true;
+    if (save) { const v = input.value.trim(); if (v) { bm.title = v; saveBookmarks(); } }
+    renderBookmarks();
+  };
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(true); else if (e.key === 'Escape') commit(false); });
+  input.addEventListener('blur', () => commit(true));
 }
 
 // ============================================================
@@ -616,6 +640,8 @@ function setThemeIcon() { document.body.classList.toggle('is-dark', isDarkTheme(
 function applyTheme(next) {
   theme = next;
   try { localStorage.setItem('cream.theme', next); } catch (_) {}
+  // Remember the last light + last dark theme so the sun/moon toggle can flip between them.
+  try { localStorage.setItem(isDarkTheme(next) ? 'cream.lastDark' : 'cream.lastLight', next); } catch (_) {}
   document.documentElement.dataset.theme = next;
   setThemeIcon();
   if (typeof refreshAccent === 'function') refreshAccent(); // re-derive accent for the new mode
@@ -628,8 +654,10 @@ function applyTheme(next) {
 }
 
 function toggleTheme(ev) {
-  const order = ['light', 'dark', 'noir'];
-  const next = order[(order.indexOf(theme) + 1) % order.length];
+  // Flip between the user's last light theme and last dark theme (preserves Arctic, Sepia, etc.).
+  let next;
+  if (isDarkTheme(theme)) { try { next = localStorage.getItem('cream.lastLight'); } catch (_) {} if (!next || isDarkTheme(next) || THEME_IDS.indexOf(next) < 0) next = 'light'; }
+  else { try { next = localStorage.getItem('cream.lastDark'); } catch (_) {} if (!next || !isDarkTheme(next) || THEME_IDS.indexOf(next) < 0) next = 'dark'; }
   themeMode = next;
   try { localStorage.setItem('cream.themeMode', next); } catch (_) {}
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -843,7 +871,7 @@ function showSettingsSection(sec) {
   settingsOverlay.querySelectorAll('.snav').forEach((b) => b.classList.toggle('active', b.dataset.sec === sec));
   settingsOverlay.querySelectorAll('.ssec').forEach((s) => { s.hidden = s.dataset.sec !== sec; });
 }
-function buildSettings() { buildAppearance(); buildAI(); buildBrowsing(); buildPrivacy(); buildPasswords(); buildExtensions(); buildAbout(); }
+function buildSettings() { buildAppearance(); buildLayout(); buildAI(); buildBrowsing(); buildPrivacy(); buildPasswords(); buildExtensions(); buildAbout(); }
 
 // Photoshop-style HSV color wheel for the accent (hue = angle, saturation = radius, value = slider).
 function setupColorWheel(el) {
@@ -901,6 +929,8 @@ function buildAppearance() {
     `<button class="swatch${p.id === currentPreset ? ' active' : ''}" data-preset="${p.id}" style="--sw-accent:${presetAccent(p)}" title="${p.name}"><span class="dot"></span><span class="nm">${p.name}</span></button>`
   ).join('');
   const blur = (document.documentElement.style.getPropertyValue('--blur') || '20').replace('px', '').trim() || '20';
+  const acryOn = acrylicOn();
+  const glassLvl = glassLevel();
   const tbh = (document.documentElement.style.getPropertyValue('--titlebar-h') || '34').replace('px', '').trim() || '34';
   const noSidebar = document.body.classList.contains('no-sidebar');
   const wx = widgetPrefs();
@@ -938,6 +968,10 @@ function buildAppearance() {
     '<div class="set-row"><div class="rl"><div class="nm">Top bar height</div><div class="ds">Make the tab bar taller or shorter.</div></div>' +
     `<div class="set-right"><input class="slider" type="range" id="tbhSlider" min="28" max="52" value="${tbh}"></div></div></div>` +
     '<div class="set-group"><div class="set-label">Glass</div>' +
+    '<div class="set-row"><div class="rl"><div class="nm">Glass theme</div><div class="ds">Make the whole browser translucent over the blurred desktop. Windows 11 only; best on a dark theme. Re-open the window after toggling.</div></div>' +
+    `<div class="set-right"><div class="switch${acryOn ? ' on' : ''}" id="acrylicSwitch" role="switch" aria-checked="${acryOn}" tabindex="0"></div></div></div>` +
+    '<div class="set-row"><div class="rl"><div class="nm">Glass translucency</div><div class="ds">How much the desktop shows through. Drag higher for more glass.</div></div>' +
+    `<div class="set-right glass-slider"><input type="range" id="glassSlider" min="20" max="95" step="1" value="${glassLvl}" aria-label="Glass translucency" /><span id="glassVal">${glassLvl}%</span></div></div>` +
     '<div class="set-row"><div class="rl"><div class="nm">Frost intensity</div><div class="ds">Blur behind translucent surfaces.</div></div>' +
     `<div class="set-right"><input class="slider" type="range" id="blurSlider" min="0" max="40" value="${blur}"></div></div></div>` +
     '<div class="set-group"><div class="set-label">Startup</div>' +
@@ -972,6 +1006,13 @@ function buildAppearance() {
     document.documentElement.style.setProperty('--glass', String(Math.min(0.92, v / 40 * 0.9)));
     try { localStorage.setItem('cream.blur', e.target.value); } catch (_) {}
   });
+  el.querySelector('#acrylicSwitch').addEventListener('click', (e) => {
+    const on = !e.currentTarget.classList.contains('on');
+    e.currentTarget.classList.toggle('on', on); e.currentTarget.setAttribute('aria-checked', on);
+    setAcrylicMode(on);
+  });
+  const glassSlider = el.querySelector('#glassSlider'); const glassValEl = el.querySelector('#glassVal');
+  glassSlider.addEventListener('input', (e) => { const v = Number(e.target.value); glassValEl.textContent = v + '%'; setGlassLevel(v); pushGlassToNewTabs(v); });
   el.querySelector('#replayOnbBtn').addEventListener('click', () => {
     try { localStorage.removeItem('cream.onboarded'); } catch (_) {}
     closeSettings();
@@ -1105,17 +1146,9 @@ function buildBrowsing() {
   const bmHidden = document.body.classList.contains('bookmarks-hidden');
   const seCur = currentEngine();
   const seOpts = Object.keys(SEARCH_ENGINES).map((k) => `<option value="${k}"${k === seCur ? ' selected' : ''}>${SEARCH_ENGINES[k].name}</option>`).join('');
-  const lite = liteMode();
-  const vtOn = verticalTabsOn();
-  const ahOn = vbarAutohideOn();
-  const ctrOn = centerUrlOn();
-  const acryOn = acrylicOn();
-  const glassLvl = glassLevel();
-  const mode = browserMode();
   const sleepCur = sleepMins();
   const sleepOpts = [[0, 'Off'], [5, 'After 5 minutes'], [15, 'After 15 minutes'], [30, 'After 30 minutes'], [60, 'After 1 hour']]
     .map(([v, l]) => `<option value="${v}"${v === sleepCur ? ' selected' : ''}>${l}</option>`).join('');
-  const modeBtn = (id, label, desc) => `<button type="button" class="mode-opt${mode === id ? ' on' : ''}" data-mode="${id}"><span class="mode-opt-t">${label}</span><span class="mode-opt-d">${desc}</span></button>`;
   let animOn = true; try { animOn = localStorage.getItem('cream.anim') !== '0'; } catch (_) {}
   el.innerHTML =
     '<h2>Browsing</h2><p class="sub">Search, rendering, performance, and your data.</p>' +
@@ -1128,23 +1161,6 @@ function buildBrowsing() {
     '<div class="set-row"><div class="rl"><div class="nm">Show bookmarks bar</div><div class="ds">Toggle the bookmarks strip under the toolbar.</div></div>' +
     `<div class="set-right"><div class="switch${bmHidden ? '' : ' on'}" id="bmSwitch" role="switch" aria-checked="${!bmHidden}" tabindex="0"></div></div></div>` +
     '</div>' +
-    '<div class="set-group"><div class="set-label">Interface</div>' +
-    '<div class="set-row"><div class="rl"><div class="nm">Browser mode</div><div class="ds">Choose the overall feel of the browser.</div></div></div>' +
-    '<div class="mode-seg" id="modeSeg" role="radiogroup" aria-label="Browser mode">' +
-      modeBtn('normal', 'Normal', 'Full liquid-glass UI') +
-      modeBtn('lite', 'Lightweight', 'Low-memory, plain & fast') +
-      modeBtn('minimal', 'Minimal', 'Thin, sleek, decluttered') +
-    '</div>' +
-    '<div class="set-row"><div class="rl"><div class="nm">Vertical tabs</div><div class="ds">Move your tabs and address bar into a solid sidebar down the left edge.</div></div>' +
-    `<div class="set-right"><div class="switch${vtOn ? ' on' : ''}" id="vtabSwitch" role="switch" aria-checked="${vtOn}" tabindex="0"></div></div></div>` +
-    '<div class="set-row"><div class="rl"><div class="nm">Auto-hide the tab sidebar</div><div class="ds">When using vertical tabs, tuck the sidebar away and slide it out on hover.</div></div>' +
-    `<div class="set-right"><div class="switch${ahOn ? ' on' : ''}" id="vbarAutohideSwitch" role="switch" aria-checked="${ahOn}" tabindex="0"></div></div></div>` +
-    '<div class="set-row"><div class="rl"><div class="nm">Center the address bar</div><div class="ds">Center the text in the address bar for a cleaner look.</div></div>' +
-    `<div class="set-right"><div class="switch${ctrOn ? ' on' : ''}" id="centerUrlSwitch" role="switch" aria-checked="${ctrOn}" tabindex="0"></div></div></div>` +
-    '<div class="set-row"><div class="rl"><div class="nm">Glass theme</div><div class="ds">Make the whole browser translucent glass — the blurred desktop shows through. Windows 11 only; best on a dark theme. Re-open the window after toggling.</div></div>' +
-    `<div class="set-right"><div class="switch${acryOn ? ' on' : ''}" id="acrylicSwitch" role="switch" aria-checked="${acryOn}" tabindex="0"></div></div></div>` +
-    '<div class="set-row"><div class="rl"><div class="nm">Glass translucency</div><div class="ds">How much the desktop shows through. Drag higher for more glass.</div></div>' +
-    `<div class="set-right glass-slider"><input type="range" id="glassSlider" min="20" max="95" step="1" value="${glassLvl}" aria-label="Glass translucency" /><span id="glassVal">${glassLvl}%</span></div></div></div>` +
     '<div class="set-group"><div class="set-label">Performance</div>' +
     '<div class="set-row"><div class="rl"><div class="nm">Animations</div><div class="ds">Smooth motion and transitions. Turn off to reduce CPU use.</div></div>' +
     `<div class="set-right"><div class="switch${animOn ? ' on' : ''}" id="animSwitch" role="switch" aria-checked="${animOn}" tabindex="0"></div></div></div>` +
@@ -1171,38 +1187,12 @@ function buildBrowsing() {
     e.currentTarget.classList.toggle('on', on); e.currentTarget.setAttribute('aria-checked', on);
     setBookmarksBarHidden(!on); updateRailActive();
   });
-  el.querySelector('#vtabSwitch').addEventListener('click', (e) => {
-    const on = !e.currentTarget.classList.contains('on');
-    e.currentTarget.classList.toggle('on', on); e.currentTarget.setAttribute('aria-checked', on);
-    setVerticalTabs(on);
-  });
   el.querySelector('#animSwitch').addEventListener('click', (e) => {
     const on = !e.currentTarget.classList.contains('on');
     e.currentTarget.classList.toggle('on', on); e.currentTarget.setAttribute('aria-checked', on);
     try { localStorage.setItem('cream.anim', on ? '1' : '0'); } catch (_) {}
     applyChromeModes(); renavNewTabViews();
   });
-  el.querySelectorAll('#modeSeg .mode-opt').forEach((b) => b.addEventListener('click', () => {
-    el.querySelectorAll('#modeSeg .mode-opt').forEach((x) => x.classList.toggle('on', x === b));
-    setBrowserMode(b.dataset.mode);
-  }));
-  el.querySelector('#vbarAutohideSwitch').addEventListener('click', (e) => {
-    const on = !e.currentTarget.classList.contains('on');
-    e.currentTarget.classList.toggle('on', on); e.currentTarget.setAttribute('aria-checked', on);
-    setVbarAutohide(on);
-  });
-  el.querySelector('#centerUrlSwitch').addEventListener('click', (e) => {
-    const on = !e.currentTarget.classList.contains('on');
-    e.currentTarget.classList.toggle('on', on); e.currentTarget.setAttribute('aria-checked', on);
-    setCenterUrl(on);
-  });
-  el.querySelector('#acrylicSwitch').addEventListener('click', (e) => {
-    const on = !e.currentTarget.classList.contains('on');
-    e.currentTarget.classList.toggle('on', on); e.currentTarget.setAttribute('aria-checked', on);
-    setAcrylicMode(on);
-  });
-  const glassSlider = el.querySelector('#glassSlider'); const glassValEl = el.querySelector('#glassVal');
-  glassSlider.addEventListener('input', (e) => { const v = Number(e.target.value); glassValEl.textContent = v + '%'; setGlassLevel(v); pushGlassToNewTabs(v); });
   el.querySelector('#sleepSel').addEventListener('change', (e) => { try { localStorage.setItem('cream.sleepMins', e.target.value); } catch (_) {} });
   el.querySelector('#importBtn').addEventListener('click', async (ev) => {
     const row = el.querySelector('#importRow'); const box = el.querySelector('#importList');
@@ -1221,6 +1211,39 @@ function buildBrowsing() {
     row.style.display = '';
   });
   el.querySelector('#clearHistBtn').addEventListener('click', () => { history = []; saveHistory(); if (historyPanelOpen) renderHistory(); });
+}
+
+function buildLayout() {
+  const el = $('secLayout');
+  const vtOn = verticalTabsOn();
+  const cpOn = compactOn();
+  const ctrOn = centerUrlOn();
+  const mode = browserMode();
+  const modeBtn = (id, label, desc) => `<button type="button" class="mode-opt${mode === id ? ' on' : ''}" data-mode="${id}"><span class="mode-opt-t">${label}</span><span class="mode-opt-d">${desc}</span></button>`;
+  el.innerHTML =
+    '<h2>Layout</h2><p class="sub">Tabs, density, and how the chrome is arranged.</p>' +
+    '<div class="set-group"><div class="set-label">Mode</div>' +
+    '<div class="set-row"><div class="rl"><div class="nm">Browser mode</div><div class="ds">Choose the overall feel of the browser.</div></div></div>' +
+    '<div class="mode-seg" id="modeSegLayout" role="radiogroup" aria-label="Browser mode">' +
+      modeBtn('normal', 'Normal', 'Full liquid-glass UI') +
+      modeBtn('lite', 'Lightweight', 'Low-memory, plain &amp; fast') +
+      modeBtn('minimal', 'Minimal', 'Thin, sleek, decluttered') +
+    '</div></div>' +
+    '<div class="set-group"><div class="set-label">Tabs &amp; chrome</div>' +
+    '<div class="set-row"><div class="rl"><div class="nm">Vertical tabs</div><div class="ds">Move your tabs and address bar into a solid sidebar down the left edge.</div></div>' +
+    `<div class="set-right"><div class="switch${vtOn ? ' on' : ''}" id="vtabSwitch" role="switch" aria-checked="${vtOn}" tabindex="0"></div></div></div>` +
+    '<div class="set-row"><div class="rl"><div class="nm">Compact mode</div><div class="ds">Auto-hide the toolbar (or the tab sidebar, in vertical mode) — it slides back when you reach for it.</div></div>' +
+    `<div class="set-right"><div class="switch${cpOn ? ' on' : ''}" id="compactSwitch" role="switch" aria-checked="${cpOn}" tabindex="0"></div></div></div>` +
+    '<div class="set-row"><div class="rl"><div class="nm">Center the address bar</div><div class="ds">Center the text in the address bar for a cleaner look.</div></div>' +
+    `<div class="set-right"><div class="switch${ctrOn ? ' on' : ''}" id="centerUrlSwitch" role="switch" aria-checked="${ctrOn}" tabindex="0"></div></div></div></div>`;
+  el.querySelectorAll('#modeSegLayout .mode-opt').forEach((b) => b.addEventListener('click', () => {
+    el.querySelectorAll('#modeSegLayout .mode-opt').forEach((x) => x.classList.toggle('on', x === b));
+    setBrowserMode(b.dataset.mode);
+  }));
+  const sw = (sel, fn) => { const e = el.querySelector(sel); e.addEventListener('click', () => { const on = !e.classList.contains('on'); e.classList.toggle('on', on); e.setAttribute('aria-checked', on); fn(on); }); };
+  sw('#vtabSwitch', setVerticalTabs);
+  sw('#compactSwitch', setCompact);
+  sw('#centerUrlSwitch', setCenterUrl);
 }
 
 function buildAbout() {
@@ -1889,6 +1912,7 @@ function showRailMenu(x, y, id) {
 // Shared floating context menu (toolbar customise + web-page right-click)
 let ctxMenuEl = null, ctxBackdrop = null;
 function closeCtxMenu() {
+  document.body.classList.remove('ctx-open');
   if (ctxBackdrop) { ctxBackdrop.remove(); ctxBackdrop = null; }
   if (!ctxMenuEl) return;
   ctxMenuEl.remove(); ctxMenuEl = null;
@@ -1905,6 +1929,7 @@ function showCtxMenu(x, y, items) {
   bd.addEventListener('mousedown', (e) => { e.preventDefault(); closeCtxMenu(); });
   bd.addEventListener('contextmenu', (e) => { e.preventDefault(); closeCtxMenu(); });
   document.body.appendChild(bd);
+  document.body.classList.add('ctx-open');   // makes webviews ignore clicks so the backdrop can catch them
   const m = document.createElement('div'); m.className = 'ctx-menu'; ctxMenuEl = m;
   // Clicks inside the menu box must NOT dismiss it (only item actions act).
   m.addEventListener('mousedown', (e) => e.stopPropagation());
@@ -2018,6 +2043,7 @@ function setBrowserMode(mode) {
     localStorage.setItem('cream.lite', mode === 'lite' ? '1' : '0');
     localStorage.setItem('cream.minimal', mode === 'minimal' ? '1' : '0');
   } catch (_) {}
+  try { window.browserAPI.setLiteMode && window.browserAPI.setLiteMode(mode === 'lite'); } catch (_) {}  // perf flags apply next launch
   applyChromeModes(); renavNewTabViews();
 }
 function centerUrlOn() { try { return localStorage.getItem('cream.centerUrl') === '1'; } catch (_) { return false; } }
@@ -2092,11 +2118,21 @@ function setVerticalTabs(on) {
   }
   try { localStorage.setItem('cream.vtabs', on ? '1' : '0'); } catch (_) {}
 }
-function vbarAutohideOn() { try { return localStorage.getItem('cream.vbarAutohide') === '1'; } catch (_) { return false; } }
-function setVbarAutohide(on) {
-  document.body.classList.toggle('vbar-autohide', on);
-  try { localStorage.setItem('cream.vbarAutohide', on ? '1' : '0'); } catch (_) {}
+function compactOn() { try { return localStorage.getItem('cream.compact') === '1' || localStorage.getItem('cream.vbarAutohide') === '1'; } catch (_) { return false; } }
+function setCompact(on) {
+  document.body.classList.toggle('compact', on);
+  if (!on) document.body.classList.remove('top-reveal');
+  try { localStorage.setItem('cream.compact', on ? '1' : '0'); } catch (_) {}
 }
+// Compact mode (horizontal): reveal the hidden toolbar when the cursor reaches the top edge.
+window.addEventListener('mousemove', (e) => {
+  const b = document.body;
+  if (!b.classList.contains('compact') || b.classList.contains('vtabs')) return;
+  if (e.clientY <= 4) b.classList.add('top-reveal');
+  else if (e.clientY > 66 && document.activeElement !== addressEl) b.classList.remove('top-reveal');
+});
+// Keep the toolbar revealed while the address bar is focused (e.g. via Ctrl+L) in compact mode.
+addressEl.addEventListener('focus', () => { const b = document.body; if (b.classList.contains('compact') && !b.classList.contains('vtabs')) b.classList.add('top-reveal'); });
 
 // ============================================================
 //  Web apps — pinned apps that open in a solid slide-out panel
@@ -2383,6 +2419,10 @@ function init() {
   $('forwardBtn').addEventListener('click', () => handleShortcut('forward'));
   $('reloadBtn').addEventListener('click', () => { const t = activeTab(); if (!t) return; if (t.loading) t.wv.stop(); else t.wv.reload(); });
   $('homeBtn').addEventListener('click', () => { const t = activeTab(); if (t) t.wv.loadURL(newTabTarget()); });
+  // Brand logo → go to the start page (gives the top-left mark a purpose).
+  const goHome = () => { const t = activeTab(); if (t) t.wv.loadURL(newTabTarget()); else createTab(); };
+  const brandHome = $('brandHome');
+  if (brandHome) { brandHome.addEventListener('click', goHome); brandHome.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goHome(); } }); }
   $('newTabBtn').addEventListener('click', () => { createTab(); focusOmnibox(); });
   starBtn.addEventListener('click', toggleBookmark);
 
@@ -2508,7 +2548,7 @@ function init() {
     }
     if (localStorage.getItem('cream.noSidebar') === '1') document.body.classList.add('no-sidebar');
     if (verticalTabsOn()) setVerticalTabs(true);
-    if (vbarAutohideOn()) setVbarAutohide(true);
+    if (compactOn()) setCompact(true);
     if (centerUrlOn()) setCenterUrl(true);
     applyGlassLevel();
     if (acrylicOn()) setAcrylicMode(true);

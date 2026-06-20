@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('browserAPI', {
   close: () => ipcRenderer.send('window:close'),
   isMaximized: () => ipcRenderer.invoke('window:is-maximized'),
   setAcrylic: (on) => ipcRenderer.send('window:set-acrylic', !!on),
+  setLiteMode: (on) => ipcRenderer.send('mode:set-lite', !!on),
   newIncognito: () => ipcRenderer.send('window:new-incognito'),
 
   onMaximizeChange: (cb) => ipcRenderer.on('window:maximized', (_e, val) => cb(val)),

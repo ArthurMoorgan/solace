@@ -188,8 +188,8 @@
     .d1 { animation-delay: 0.05s; } .d2 { animation-delay: 0.16s; } .d3 { animation-delay: 0.28s; } .d4 { animation-delay: 0.4s; }
 
     .clock { text-align: center; }
-    .time { font-family: "Inter", system-ui, sans-serif; font-weight: 300; font-size: 66px; line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
-    .meta { margin-top: 8px; color: var(--text-2); font-size: 14px; font-weight: 500; }
+    .time { font-family: "Inter", system-ui, sans-serif; font-weight: 600; font-size: 64px; line-height: 1; letter-spacing: -2.5px; font-variant-numeric: tabular-nums; }
+    .meta { margin-top: 10px; color: var(--text-2); font-size: 13.5px; font-weight: 500; letter-spacing: 0.01em; }
     .greeting { color: var(--accent); font-weight: 600; }
 
     form.search {
@@ -214,7 +214,7 @@
     .link:hover { transform: scale(1.05); background: var(--surface-2); color: var(--text-1); border-color: var(--border); }
     .link .ic { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; overflow: hidden; background: #fff; box-shadow: 0 2px 6px rgba(120,95,55,0.12); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.24s; }
     .link .ic img { width: 24px; height: 24px; }
-    .link .ic .fb { font-family: "Fraunces", serif; font-weight: 600; font-size: 18px; color: var(--accent); }
+    .link .ic .fb { font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 18px; color: var(--accent); }
     .link span.lbl { font-size: 12.5px; font-weight: 500; transition: color 0.22s; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     /* Hover micro-interactions */
@@ -239,7 +239,7 @@
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     .dm-card { width: 320px; max-width: 86vw; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: 0 24px 60px rgba(0,0,0,0.28); display: flex; flex-direction: column; gap: 13px; animation: tilePop 0.2s cubic-bezier(0.22,1,0.36,1); }
     @keyframes tilePop { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: none; } }
-    .dm-title { font-family: "Fraunces", serif; font-weight: 600; font-size: 17px; color: var(--text-1); }
+    .dm-title { font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 17px; color: var(--text-1); }
     .dm-input { font: inherit; font-size: 14px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-1); outline: none; transition: border-color 0.16s; }
     .dm-input:focus { border-color: var(--accent); }
     .dm-input.bad { border-color: #c14a36; }
@@ -265,7 +265,7 @@
     .w-hint { font-size: 13px; color: var(--text-2); line-height: 1.5; }
     .w-top { display: flex; align-items: center; gap: 12px; }
     .w-ico { font-size: 34px; line-height: 1; }
-    .w-temp { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 38px; color: var(--text-1); }
+    .w-temp { font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 38px; color: var(--text-1); }
     .w-cond { margin-top: 6px; font-size: 14px; color: var(--text-1); font-weight: 500; }
     .w-loc { font-size: 12.5px; color: var(--text-2); }
     .rem-list { list-style: none; display: flex; flex-direction: column; gap: 6px; margin: 0 0 10px; padding: 0; max-height: 168px; overflow-y: auto; }
@@ -365,7 +365,7 @@
     .ai-panel[hidden] { display: none; }
 
     .ai-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 14px 12px 18px; border-bottom: 1px solid var(--border); }
-    .ai-title { display: flex; align-items: center; gap: 9px; font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 17px; }
+    .ai-title { display: flex; align-items: center; gap: 9px; font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 17px; }
     .ai-title .spark { color: var(--accent); display: grid; place-items: center; } .ai-title .spark svg { width: 17px; height: 17px; }
     .ai-head-actions { display: flex; align-items: center; gap: 6px; }
     .ai-chip { border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2); font: inherit; font-size: 11.5px; font-weight: 600; padding: 5px 10px; border-radius: 9px; cursor: pointer; transition: background 0.15s, color 0.15s; white-space: nowrap; }
@@ -410,7 +410,7 @@
 
     /* Setup / settings views */
     .ai-form-view { padding: 8px 6px; display: flex; flex-direction: column; gap: 12px; }
-    .ai-form-view h3 { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 17px; }
+    .ai-form-view h3 { font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 17px; }
     .ai-form-view p { font-size: 13px; color: var(--text-2); line-height: 1.6; }
     .ai-field { display: flex; gap: 8px; }
     .ai-field input, .ai-field select { flex: 1; font: inherit; font-size: 13.5px; padding: 10px 12px; border-radius: 11px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-1); outline: none; }
@@ -493,7 +493,7 @@
 
     <section class="ai enter d4" id="ai">
       <button class="ai-launch" id="aiLaunch">
-        <span class="spark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.5L19.5 9l-5.6 1.5L12 16l-1.9-5.5L4.5 9l5.6-1.5z"/></svg></span>
+        <span class="spark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5l1.9 5.5L19.5 12l-5.6 1.5L12 19l-1.9-5.5L4.5 12l5.6-1.5z"/></svg></span>
         <span>Ask Drift AI</span>
         <span class="sub">your built-in assistant</span>
       </button>
@@ -501,7 +501,7 @@
       <div class="ai-panel" id="aiPanel" hidden>
         <header class="ai-head">
           <div class="ai-title">
-            <span class="spark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.5L19.5 9l-5.6 1.5L12 16l-1.9-5.5L4.5 9l5.6-1.5z"/></svg></span>
+            <span class="spark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5l1.9 5.5L19.5 12l-5.6 1.5L12 19l-1.9-5.5L4.5 12l5.6-1.5z"/></svg></span>
             Drift AI
           </div>
           <div class="ai-head-actions">
@@ -711,7 +711,7 @@
     var elSettings = document.getElementById('aiSettingsBtn');
     var elClose = document.getElementById('aiCloseBtn');
 
-    var SPARK = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.5L19.5 9l-5.6 1.5L12 16l-1.9-5.5L4.5 9l5.6-1.5z"/></svg>';
+    var SPARK = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5l1.9 5.5L19.5 12l-5.6 1.5L12 19l-1.9-5.5L4.5 12l5.6-1.5z"/></svg>';
     var ICON_SEND = '<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
     var ICON_STOP = '<svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>';
 
