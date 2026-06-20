@@ -1,6 +1,6 @@
 {
   "name": "cream-browser",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Drift — a polished, light & minimal liquid-glass web browser built on Electron.",
   "main": "main.js",
   "scripts": {
