@@ -53,7 +53,11 @@ function download(url, dest, redirects) {
     console.log('Downloading uBlock Origin ' + VERSION + '…');
     await download(URL, zip, 0);
     console.log('Extracting…');
-    execSync('powershell -NoProfile -Command "Expand-Archive -LiteralPath \'' + zip + '\' -DestinationPath \'' + EXT_PARENT + '\' -Force"', { stdio: 'ignore' });
+    if (process.platform === 'win32') {
+      execSync('powershell -NoProfile -Command "Expand-Archive -LiteralPath \'' + zip + '\' -DestinationPath \'' + EXT_PARENT + '\' -Force"', { stdio: 'ignore' });
+    } else {
+      execSync('unzip -q -o "' + zip + '" -d "' + EXT_PARENT + '"', { stdio: 'ignore' });
+    }
     try { fs.unlinkSync(zip); } catch (_) {}
     if (fs.existsSync(path.join(EXT_DIR, 'manifest.json'))) console.log('uBlock Origin ready.');
     else console.warn('Warning: extracted but manifest.json not found at ' + EXT_DIR);

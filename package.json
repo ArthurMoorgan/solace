@@ -37,6 +37,11 @@
       "extensions/**/*",
       "package.json"
     ],
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.png"
+    },
     "win": {
       "target": [
         {
